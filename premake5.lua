@@ -41,7 +41,7 @@ workspace "SudokuGuider"
 
 project "Core"
    targetdir "local/Core/%{cfg.buildcfg}"
-   includedirs { "source/Core/Public/" }
+   includedirs { "source/Core/", "source/Core/Public/" }
 
    files { "source/Core/**.h", "source/Core/**.cpp" }
    removefiles {}
@@ -50,7 +50,7 @@ project "SudokuAlgorithms"
    targetdir "local/SudokuAlgorithms/%{cfg.buildcfg}"
 
    links { "Core" }
-   includedirs { "source/SudokuAlgorithms/Public/", "source/Core/Public/" }
+   includedirs { "source/SudokuAlgorithms/", "source/SudokuAlgorithms/Public/", "source/Core/Public/" }
 
    files { "source/SudokuAlgorithms/**.h", "source/SudokuAlgorithms/**.cpp" }
 
@@ -60,6 +60,6 @@ project "Main"
    -- removeplatforms { "Static", "DLL" }
 
    links { "Core", "SudokuAlgorithms" }
-   includedirs { "source/SudokuAlgorithms/Public/", "source/Core/Public/" }
+   includedirs { "source/Main/", "source/Main/Public/", "source/SudokuAlgorithms/Public/", "source/Core/Public/" }
 
    files { "source/Main/**.h", "source/Main/**.cpp" }
