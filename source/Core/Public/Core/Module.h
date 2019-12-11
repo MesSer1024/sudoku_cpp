@@ -1,6 +1,6 @@
 #pragma once
 
-namespace mn
+namespace dd
 {
 
 #ifdef COMPILING_STATIC

@@ -4,7 +4,7 @@
 int main()
 {
 	using namespace std;
-	using namespace mn;
+	using namespace dd;
 	u64 value = 13;
 	cout << "fooobar:" << value << endl;
 

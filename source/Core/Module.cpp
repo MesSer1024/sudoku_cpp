@@ -1,6 +1,6 @@
 #include <Core/Module.h>
 
-namespace mn
+namespace dd
 {
 	//////////////// CHEAT BIND /////////////
 	void Bind_Core_Module() {}
