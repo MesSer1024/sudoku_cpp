@@ -134,4 +134,74 @@ namespace dd
 		}
 	};
 
+	struct Row
+	{
+		Node data[9];
+	};
+
+	struct Column
+	{
+		Node data[9];
+	};
+
+	struct Cell
+	{
+		Node data[9];
+	};
+
+	Row getRow(const Board& b, uint rowId)
+	{
+		Row row;
+		for (uint i = 0; i < 9; ++i)
+			row.data[i] = b.Nodes[i + rowId * 9];
+
+		return row;
+	}
+
+	Column getColumn(const Board& b, uint columnId)
+	{
+		Column col;
+		for (uint i = 0; i < 9; ++i)
+		{
+			col.data[i] = b.Nodes[columnId + (i * 9)];
+		}
+		return col;
+	}
+
+	u16 topLeftFromCellId(uint cellId)
+	{
+		u16 rOffset = (cellId / 3);
+		u16 cOffset = (cellId % 3);
+		return 
+			27 * rOffset +
+			3 * cOffset;
+	}
+
+	Cell getCell(const Board& b, uint cellId)
+	{
+		//	0:	 		1 :			2 :
+		//	00 01 02	03 04 05	06 07 08
+		//	09 10 11	12 13 14	15 16 17
+		//	18 19 20	21 22 23	24 25 26
+
+		//	3:			4 :			5 :
+		//	27 28 29
+		//	36 37 38
+		//	45 46 47
+
+		//	6:
+		//	54 55 56
+		//	63 64 65
+		//  72 73 74
+
+		Cell cell;
+		u16 top_left = topLeftFromCellId(cellId);
+		for (uint i = 0; i < 3; ++i)
+		{
+			cell.data[i * 3 + 0] = b.Nodes[top_left + i * 9 + 0];
+			cell.data[i * 3 + 1] = b.Nodes[top_left + i * 9 + 1];
+			cell.data[i * 3 + 2] = b.Nodes[top_left + i * 9 + 2];
+		}
+		return cell;
+	}
 }

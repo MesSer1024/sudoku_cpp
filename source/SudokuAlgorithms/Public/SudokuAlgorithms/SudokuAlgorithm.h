@@ -40,6 +40,7 @@ namespace dd
 	{
 		bool simple(const Board& b, Result& outResult)
 		{
+			
 			return false;
 		}
 	}

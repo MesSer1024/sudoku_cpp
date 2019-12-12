@@ -50,6 +50,52 @@ namespace dd
 			}
 		}
 	}
+
+	void validateHelpers() {
+		std::string s = "..5.398...82.1...7.4.75.62..3.49.................23.8..91.82.6.5...6.93...894.1..";
+
+			//	..5 .39 8..
+			//	.82 .1. ..7
+			//	.4. 75. 62.
+				        
+			//	.3. 49. ...
+			//	... ... ...
+			//	... .23 .8.
+				        
+			//	.91 .82 .6.
+			//	5.. .6. 93.
+			//	..8 94. 1..
+
+
+		Board b = Board::fromString(s.c_str());
+		for (uint foo = 0; foo < 9; ++foo)
+		{
+			Row row = getRow(b, foo);
+			for (uint i = 0; i < 9; ++i)
+			{
+				assert(row.data[i] == b.Nodes[i+9*foo]);
+			}
+		}
+
+		for (uint foo = 0; foo < 9; ++foo)
+		{
+			Column col = getColumn(b, foo);
+			for (uint i = 0; i < 9; ++i)
+			{
+				assert(col.data[i] == b.Nodes[i * 9 + foo]);
+			}
+		}
+
+		for (uint foo = 0; foo < 9; ++foo)
+		{
+			Cell cell = getCell(b, foo);
+			assert(&cell.data != nullptr);
+			u32 topLeft = topLeftFromCellId(foo);
+			u32 expected = (foo % 3 * 3 + ((foo / 3) * 27));
+			assert(topLeft == expected);
+			assert(cell.data[0] == b.Nodes[expected]);
+		}
+	}
 }
 
 namespace dd
@@ -72,6 +118,7 @@ int main()
 
 	validateCandidates();
 	validateBuildBoardFromLayout();
+	validateHelpers();
 
 	solveSimpleSudoku();
 
