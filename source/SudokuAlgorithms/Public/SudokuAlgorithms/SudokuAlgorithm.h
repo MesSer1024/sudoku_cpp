@@ -3,6 +3,8 @@
 #include <SudokuAlgorithms/Module.h>
 #include <vector>
 #include <map>
+#include <bitset>
+#include <intrin.h>
 
 namespace dd
 {
@@ -10,13 +12,14 @@ namespace dd
 	{
 		Node prev;
 		Node next;
+		u8 index;
 	};
 
 	struct Result
 	{
-		void append(Node old, Node next)
+		void append(u8 id, Node old, Node next)
 		{
-			Changes.push_back({ old, next });
+			Changes.push_back({ old, next, id });
 		}
 
 		Change fetch(uint idx)
@@ -36,11 +39,27 @@ namespace dd
 		std::vector<Change> Changes;
 	};
 
+
 	namespace techniques
 	{
-		bool simple(const Board& b, Result& outResult)
+		bool soloCandidate(const Board& b, Result& outResult)
 		{
-			
+			uint i = 0;
+			for (Node n : b.Nodes)
+			{
+				std::bitset<9> candidates(n.getCandidates());
+				if (candidates.count() == 1)
+				{
+					unsigned long bitIndex;
+					_BitScanForward(&bitIndex, candidates.to_ulong());
+					Node old = n;
+					Node next = n;
+					next.solve(bitIndex);
+					outResult.append(i, old, next);
+					return true;
+				}
+				i++;
+			}
 			return false;
 		}
 	}

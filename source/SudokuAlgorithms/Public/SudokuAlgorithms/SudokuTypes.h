@@ -41,7 +41,7 @@ namespace dd
 			return bits.all == other.bits.all;
 		}
 
-		void solve(ValueType value) { bits.all = 0; bits.value = value; bits.solved = 1u; }
+		void solve(u32 value) { bits.all = 0; bits.value = value; bits.solved = 1u; }
 		void setCandidatesFromMask(ValueType candidateMask) { bits.candidates = candidateMask; }
 
 		void removeCandidate(ValueType candidate) { 
@@ -80,6 +80,9 @@ namespace dd
 			memcpy(&b.raw[0], &other.raw[0], sizeof(char) * BoardSize);
 			memcpy(&b.Nodes[0], &other.Nodes[0], sizeof(Node) * BoardSize);
 		}
+
+		Node& begin() { return Nodes[0]; }
+		Node& end() { return Nodes[81]; }
 
 		bool operator==(const Board& other) const
 		{

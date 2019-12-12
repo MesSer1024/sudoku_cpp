@@ -4,6 +4,7 @@
 #include <SudokuAlgorithms/SudokuTypes.h>
 #include <SudokuAlgorithms/SudokuAlgorithm.h>
 #include <assert.h>  
+#include <functional>
 
 namespace dd
 {
@@ -100,14 +101,24 @@ namespace dd
 
 namespace dd
 {
-	void solveSimpleSudoku()
+	void validateSoloCandidateTechnique()
 	{
 		std::string s = "..5.398...82.1...7.4.75.62..3.49.................23.8..91.82.6.5...6.93...894.1..";
 		Board board = Board::fromString(s.c_str());
 		Result outcome;
 
-		const bool modified = techniques::simple(board, outcome);
+		board.Nodes[64].setCandidatesFromMask(1 << 5);
+		const bool modified = techniques::soloCandidate(board, outcome);
 		assert(modified);
+		assert(outcome.size() == 1);
+		assert(outcome.fetch(0).index == 64);
+	}
+
+	bool invokeTechniques(Board& b, Result& result)
+	{
+		if (!techniques::soloCandidate(b, result))
+			;
+		return false;
 	}
 }
 
@@ -119,8 +130,24 @@ int main()
 	validateCandidates();
 	validateBuildBoardFromLayout();
 	validateHelpers();
+	
+	validateSoloCandidateTechnique();
 
-	solveSimpleSudoku();
+	std::string s = "..5.398...82.1...7.4.75.62..3.49.................23.8..91.82.6.5...6.93...894.1..";
+	Board board = Board::fromString(s.c_str());
+	Result outcome;
+
+	int i = 0;
+	while (true && i < 2000)
+	{
+		if (invokeTechniques(board, outcome))
+		{
+			// something was improved
+		}
+		i++;
+	}
+
+	cout << (i >= 2000 ? "Unsolved" : "solved");
 
 	cin.get();
 	return 0;
