@@ -1,11 +1,14 @@
+#pragma once
 #include <Core/Types.h>
 #include <vector>
 #include <string>
 
 namespace dd
 {
-	using SudokuBoard = std::string;
-	using BoardCollection = std::vector<SudokuBoard>;
+	using SudokuBoardRaw = std::string;
+	using BoardCollection = std::vector<SudokuBoardRaw>;
+
+	static const SudokuBoardRaw ExampleBoardRaw = "..5.398...82.1...7.4.75.62..3.49.................23.8..91.82.6.5...6.93...894.1..";
 
 	static BoardCollection GetBoards()
 	{

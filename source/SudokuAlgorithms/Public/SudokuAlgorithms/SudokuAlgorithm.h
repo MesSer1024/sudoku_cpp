@@ -1,10 +1,12 @@
 #pragma once
 
-#include <SudokuAlgorithms/Module.h>
-#include <vector>
-#include <map>
 #include <bitset>
 #include <intrin.h>
+#include <map>
+#include <vector>
+
+#include <SudokuAlgorithms/BoardUtils.h>
+#include <SudokuAlgorithms/Module.h>
 
 namespace dd
 {
@@ -42,6 +44,16 @@ namespace dd
 
 	namespace techniques
 	{
+
+		void addAllCandidates(const Board& b)
+		{
+			Node local[BoardSize];
+			uint count = fillNodesWithPredicate(local, b, NotSolvedPredicate);
+
+			
+
+		}
+
 		bool soloCandidate(const Board& b, Result& outResult)
 		{
 			uint i = 0;
