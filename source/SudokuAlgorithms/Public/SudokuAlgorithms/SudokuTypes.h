@@ -3,13 +3,16 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
+#include <functional>
+#include <intrin.h>
 
 #include <Core/Types.h>
 #include <SudokuAlgorithms/Module.h>
 
 namespace dd
 {
-	const uint BoardSize = 81u;
+	constexpr uint BoardSize = 81u;
+	using BitAction = std::function<void(u32 bitIndex)>;
 
 	struct Candidates
 	{
@@ -141,104 +144,119 @@ namespace dd
 		}
 	};
 
-	struct Row
-	{
-		Node data[9];
-	};
-
-	struct Column
-	{
-		Node data[9];
-	};
-
-	struct Cell
-	{
-		Node data[9];
-	};
-
-	Row getRow(const Board& b, uint rowId)
-	{
-		Row row;
-		for (uint i = 0; i < 9; ++i)
-			row.data[i] = b.Nodes[i + rowId * 9];
-
-		return row;
-	}
-
-	Column getColumn(const Board& b, uint columnId)
-	{
-		Column col;
-		for (uint i = 0; i < 9; ++i)
-		{
-			col.data[i] = b.Nodes[columnId + (i * 9)];
-		}
-		return col;
-	}
-
 	constexpr u16 topLeftFromCellId(uint cellId)
 	{
-		u16 rOffset = (cellId / 3);
-		u16 cOffset = (cellId % 3);
+		u32 rOffset = (cellId / 3);
+		u32 cOffset = (cellId % 3);
 		return
-			27 * rOffset +
-			3 * cOffset;
+			static_cast<u16>(27 * rOffset +
+			3 * cOffset);
 	}
 
-	Cell getCell(const Board& b, uint cellId)
+	struct BitBoard
 	{
-		//	0:	 		1 :			2 :
-		//	00 01 02	03 04 05	06 07 08
-		//	09 10 11	12 13 14	15 16 17
-		//	18 19 20	21 22 23	24 25 26
+	private:
+		static constexpr u64 LowerMask = ~0ULL;
+		static constexpr u64 UpperMask = ((1 << (BoardSize - 64)) - 1);
 
-		//	3:			4 :			5 :
-		//	27 28 29
-		//	36 37 38	39 40 41	42 43 44
-		//	45 46 47
+	public:
+		u64 bits[2];
+		struct None {};
+		struct All {};
+		constexpr explicit BitBoard(None) : bits{} {}
+		constexpr explicit BitBoard(All) : bits{LowerMask, UpperMask} {}
+		constexpr BitBoard() : BitBoard(None{}) {}
 
-		//	6:
-		//	54 55 56
-		//	63 64 65
-		//  72 73 74
-
-		Cell cell;
-		u16 top_left = topLeftFromCellId(cellId);
-		for (uint i = 0; i < 3; ++i)
-		{
-			cell.data[i * 3 + 0] = b.Nodes[top_left + i * 9 + 0];
-			cell.data[i * 3 + 1] = b.Nodes[top_left + i * 9 + 1];
-			cell.data[i * 3 + 2] = b.Nodes[top_left + i * 9 + 2];
+		void modifyBit(uint bitIndex, bool flag) {
+			if (flag)
+				setBit(bitIndex);
+			else
+				clearBit(bitIndex);
 		}
-		return cell;
-	}
 
+		void setBit(uint bitIndex) { 
+#ifdef VALIDATE_BIT_BOUNDS
+			assert(bitIndex < BoardSize);
+#endif
+			const u8 arrIdx = bitIndex >= 64 ? 1 : 0;
+			bitIndex = bitIndex % 64;
+			bits[arrIdx] |= (1ULL << bitIndex);
+		}
+
+		void clearBit(uint bitIndex) {
+#ifdef VALIDATE_BIT_BOUNDS
+			assert(bitIndex < BoardSize);
+#endif
+			const u8 arrIdx = bitIndex >= 64 ? 1 : 0;
+			bitIndex = bitIndex % 64;
+			bits[arrIdx] &= ~(1ULL << bitIndex);
+		}
+
+		bool test(uint bitIndex) const {
+			const u8 arrIdx = bitIndex >= 64 ? 1 : 0;
+			bitIndex = bitIndex % 64;
+			const u64 mask = 1ULL << bitIndex;
+			const bool flag = bits[arrIdx] & mask;
+			return flag;
+		}
+
+		void foreachSetBit(BitAction action) const {
+			u8 bitArr[BoardSize]{};
+			u8 count = 0;
+			for (auto i = 0; i < 64; ++i)
+			{
+				const u64 testBit = 1ULL << i;
+				if (bits[0] & testBit)
+					bitArr[count++] = i;
+			}
+			for (auto i = 0; i < 128-BoardSize; ++i)
+			{
+				const u64 testBit = 1ULL << i;
+				if (bits[1] & testBit)
+					bitArr[count++] = 64 + i;
+			}
+
+			for (auto i = 0; i < count; ++i)
+				action(bitArr[i]);
+		}
+
+		u32 count() const {
+			u64 setBits = __popcnt64(bits[0]);
+			setBits += __popcnt64(bits[1]);
+			return static_cast<u32>(setBits);
+		}
+
+		bool operator==(const BitBoard& other)
+		{
+			return other.bits[0] == this->bits[0] && other.bits[1] == this->bits[1];
+		}
+
+		BitBoard getInverted() const {
+			BitBoard inverted;
+			inverted.bits[0] = ~bits[0];
+			inverted.bits[1] = ~bits[1];
+			inverted.bits[1] &= UpperMask;
+			return inverted;
+		}
+	};
 
 	struct BoardBits
 	{
-		using SudokuBitBoard = std::bitset<128>;
-		using BitBoards9 = std::array<SudokuBitBoard, 9>; // for instance all rows
+		using SudokuBitBoard = BitBoard;
+		using BitBoards9 = std::array<SudokuBitBoard, 9>; // for instance all different rows
 		using BitBoards3 = std::array<SudokuBitBoard, 3>; // for instance neighbours given a specific node
-
-		static constexpr SudokuBitBoard AllNodes() {
-			SudokuBitBoard board{};
-			for (auto i = 0; i < BoardSize; ++i)
-				board.set(i);
-			return board;
-		}
-
-		static constexpr SudokuBitBoard EmptyMask() { return SudokuBitBoard{}; }
 
 		static constexpr SudokuBitBoard BitRow(uint rowId) {
 			SudokuBitBoard row{};
 			for (uint i = 0; i < 9; ++i)
-				row.set(i + rowId * 9);
+				row.setBit(i + rowId * 9);
 			return row;
 		}
 
 		static constexpr SudokuBitBoard BitColumn(uint columnId) {
 			SudokuBitBoard col{};
 			for (uint i = 0; i < 9; ++i)
-				col.set(columnId + (i * 9));
+				col.setBit(columnId + (i * 9));
 			return col;
 		}
 
@@ -247,9 +265,9 @@ namespace dd
 			u16 top_left = topLeftFromCellId(cellId);
 			for (uint i = 0; i < 3; ++i)
 			{
-				cell.set(top_left + i * 9 + 0);
-				cell.set(top_left + i * 9 + 1);
-				cell.set(top_left + i * 9 + 2);
+				cell.setBit(top_left + i * 9 + 0);
+				cell.setBit(top_left + i * 9 + 1);
+				cell.setBit(top_left + i * 9 + 2);
 			}
 			return cell;
 		}
@@ -302,8 +320,9 @@ namespace dd
 		static SudokuBitBoard bitsSolved(const Board& b)
 		{
 			SudokuBitBoard bits;
-			for (uint i=0; i < BoardSize; ++i)
-				bits.set(i, b.Nodes[i].isSolved());
+			for (uint i = 0; i < BoardSize; ++i)
+				if (b.Nodes[i].isSolved())
+					bits.setBit(i);
 			return bits;
 		}
 
@@ -311,7 +330,7 @@ namespace dd
 		{
 			SudokuBitBoard bits;
 			for (uint i = 0; i < BoardSize; ++i)
-				bits.set(i, !b.Nodes[i].isSolved());
+				bits.modifyBit(i, !b.Nodes[i].isSolved());
 			return bits;
 		}
 
@@ -320,7 +339,7 @@ namespace dd
 		{
 			SudokuBitBoard bits;
 			for (uint i = 0; i < BoardSize; ++i)
-				bits.set(i, f(b.Nodes[i]));
+				bits.modifyBit(i, f(b.Nodes[i]));
 			return bits;
 		}
 	};

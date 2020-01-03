@@ -7,6 +7,7 @@
 
 #include <SudokuAlgorithms/BoardUtils.h>
 #include <SudokuAlgorithms/Module.h>
+#include <SudokuAlgorithms/SudokuTypes.h>
 
 namespace dd
 {
@@ -30,7 +31,7 @@ namespace dd
 		}
 
 		uint size() {
-			return Changes.size();
+			return static_cast<uint>(Changes.size());
 		}
 
 		bool operator()() {
@@ -44,19 +45,19 @@ namespace dd
 
 	namespace techniques
 	{
-
-		void addAllCandidates(const Board& b)
+		void fillAllUnsolvedWithAllCandidates(Board& b)
 		{
-			Node local[BoardSize];
-			uint count = fillNodesWithPredicate(local, b, NotSolvedPredicate);
+			BitAction applyAllCandidatesAction = [&b](u32 bitIndex) {
+				b.Nodes[bitIndex].setCandidatesFromMask(Candidates::All);
+			};
 
-			
-
+			BoardBits::SudokuBitBoard unsolvedNodes = BoardBits::bitsUnsolved(b);
+			unsolvedNodes.foreachSetBit(applyAllCandidatesAction);
 		}
 
 		bool soloCandidate(const Board& b, Result& outResult)
 		{
-			uint i = 0;
+			u8 i = 0;
 			for (Node n : b.Nodes)
 			{
 				std::bitset<9> candidates(n.getCandidates());

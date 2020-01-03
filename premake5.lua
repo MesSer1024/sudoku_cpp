@@ -16,7 +16,9 @@ workspace "SudokuGuider"
    language "C++"
    configurations { "Debug", "Release" }
    platforms { "Static", "DLL" }
+   architecture "x64"   
    location "local"
+   -- defines { "DD_USING" "DD_ON 1", "DD_OFF -3" } -- how to to something like this?
 
    filter { "platforms:Static" }
        kind "StaticLib"

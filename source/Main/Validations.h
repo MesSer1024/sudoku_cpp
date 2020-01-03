@@ -32,7 +32,7 @@ namespace dd
 
 	void validateBuildBoardFromLayout() {
 		BoardCollection boards = dd::GetBoards();
-		u32 value = boards.size();
+		u32 value = static_cast<u32>(boards.size());
 		assert(value > 0 && value < 7777777);
 
 		Board b;
@@ -56,7 +56,83 @@ namespace dd
 	void validateStaticUtilBitBoards()
 	{
 		{
-			BoardBits::SudokuBitBoard bitBoard = BoardBits::AllNodes();
+			BoardBits::SudokuBitBoard bitBoard;
+			for (uint i = 0; i < 128; ++i)
+				assert(bitBoard.test(i) == false);
+		}
+		{
+			// test tresholds 0 and 63
+			BoardBits::SudokuBitBoard bitBoard;
+			bitBoard.setBit(0);
+			bitBoard.setBit(63);
+			assert(bitBoard.test(0));
+			assert(bitBoard.test(63));
+		}
+		{
+			// test tresholds 64
+			BoardBits::SudokuBitBoard bitBoard;
+			bitBoard.setBit(64);
+			assert(bitBoard.test(64));
+		}
+		{
+			// test tresholds 65 66
+			BoardBits::SudokuBitBoard bitBoard;
+			bitBoard.setBit(65);
+			bitBoard.setBit(66);
+			assert(bitBoard.test(65));
+			assert(bitBoard.test(66));
+		}
+		{
+			// test modify tresholds 63..66
+			BoardBits::SudokuBitBoard bitBoard;
+			bitBoard.modifyBit(63, true);
+			bitBoard.modifyBit(64, true);
+			bitBoard.modifyBit(65, true);
+			bitBoard.modifyBit(66, true);
+			assert(bitBoard.test(63));
+			assert(bitBoard.test(64));
+			assert(bitBoard.test(65));
+			assert(bitBoard.test(66));
+		}
+		{
+			// test modify tresholds 63..66
+			BoardBits::SudokuBitBoard bitBoard;
+			bitBoard.setBit(63);
+			bitBoard.setBit(64);
+			bitBoard.setBit(65);
+			bitBoard.setBit(66);
+
+			bitBoard.modifyBit(63, false);
+			bitBoard.modifyBit(64, false);
+			bitBoard.modifyBit(65, false);
+			bitBoard.modifyBit(66, false);
+
+			assert(bitBoard.test(63) == false);
+			assert(bitBoard.test(64) == false);
+			assert(bitBoard.test(65) == false);
+			assert(bitBoard.test(66) == false);
+		}
+		{
+			BoardBits::SudokuBitBoard bitBoard;
+			const u64 ExpectedLowerMask = 1ULL << 63 | 1ULL << 0;
+			const u64 ExpectedUpperMask = 1ULL << (64 % 64) | 1ULL << (65 % 64);
+
+			bitBoard.setBit(0);
+			bitBoard.setBit(63);
+
+			bitBoard.setBit(64);
+			bitBoard.setBit(65);
+
+			assert(bitBoard.test(0));
+			assert(bitBoard.test(63));
+			assert(bitBoard.test(64));
+
+			assert(bitBoard.bits[0] == ExpectedLowerMask);
+			assert(bitBoard.bits[1] == ExpectedUpperMask);
+		}
+
+		{
+			BoardBits::SudokuBitBoard bitBoard(BoardBits::SudokuBitBoard::All{});
 			for (uint i = 0; i < BoardSize; ++i)
 				assert(bitBoard.test(i));
 			assert(bitBoard.test(BoardSize) == false);
@@ -122,13 +198,16 @@ namespace dd
 			BoardBits::SudokuBitBoard bitBoardUnsolved = BoardBits::bitsUnsolved(b);
 			for (uint i = 0; i < BoardSize; ++i)
 			{
-				if (b.Nodes[i].isSolved())
+				if (b.Nodes[i].isSolved()) {
 					assert(bitBoardSolved.test(i));
-				else
+					assert(bitBoardUnsolved.test(i) == false);
+				} else {
 					assert(bitBoardUnsolved.test(i));
+					assert(bitBoardSolved.test(i) == false);
+				}
 			}
 
-			BoardBits::SudokuBitBoard flippedAndMasked = bitBoardSolved.flip() & BoardBits::AllNodes();
+			BoardBits::SudokuBitBoard flippedAndMasked = bitBoardSolved.getInverted();
 			assert(flippedAndMasked == bitBoardUnsolved);
 		}
 
@@ -152,41 +231,57 @@ namespace dd
 		validateBoardAndBitBoardTransformations();
 	}
 
-	void validateHelpers() {
-		Board b = Board::fromString(ExampleBoardRaw.c_str());
-		for (uint foo = 0; foo < 9; ++foo)
-		{
-			Row row = getRow(b, foo);
-			for (uint i = 0; i < 9; ++i)
-			{
-				assert(row.data[i] == b.Nodes[i + 9 * foo]);
-			}
-		}
+	//void validateHelpers() {
+		//Board b = Board::fromString(ExampleBoardRaw.c_str());
+		//for (uint foo = 0; foo < 9; ++foo)
+		//{
+		//	Row row = getRow(b, foo);
+		//	for (uint i = 0; i < 9; ++i)
+		//	{
+		//		assert(row.data[i] == b.Nodes[i + 9 * foo]);
+		//	}
+		//}
 
-		for (uint foo = 0; foo < 9; ++foo)
-		{
-			Column col = getColumn(b, foo);
-			for (uint i = 0; i < 9; ++i)
-			{
-				assert(col.data[i] == b.Nodes[i * 9 + foo]);
-			}
-		}
+		//for (uint foo = 0; foo < 9; ++foo)
+		//{
+		//	Column col = getColumn(b, foo);
+		//	for (uint i = 0; i < 9; ++i)
+		//	{
+		//		assert(col.data[i] == b.Nodes[i * 9 + foo]);
+		//	}
+		//}
 
-		for (uint foo = 0; foo < 9; ++foo)
-		{
-			Cell cell = getCell(b, foo);
-			assert(&cell.data != nullptr);
-			u32 topLeft = topLeftFromCellId(foo);
-			u32 expected = (foo % 3 * 3 + ((foo / 3) * 27));
-			assert(topLeft == expected);
-			assert(cell.data[0] == b.Nodes[expected]);
-		}
-	}
+		//for (uint foo = 0; foo < 9; ++foo)
+		//{
+		//	Cell cell = getCell(b, foo);
+		//	assert(&cell.data != nullptr);
+		//	u32 topLeft = topLeftFromCellId(foo);
+		//	u32 expected = (foo % 3 * 3 + ((foo / 3) * 27));
+		//	assert(topLeft == expected);
+		//	assert(cell.data[0] == b.Nodes[expected]);
+		//}
+	//}
 }
 
 
 namespace dd
 {
+	void validateAddCandidates()
+	{
+		Board board = Board::fromString(ExampleBoardRaw.c_str());
+		const s64 preNumCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.getCandidates() == Candidates::All; });
+		const s64 preSolvedCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.isSolved(); });
+
+		techniques::fillAllUnsolvedWithAllCandidates(board);
+		
+		const s64 postNumCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.getCandidates() == Candidates::All; });
+		const s64 postSolvedCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.isSolved(); });
+
+		assert(preNumCandidates == 0);
+		assert(preSolvedCandidates == postSolvedCandidates);
+		assert(postSolvedCandidates + postNumCandidates == BoardSize);
+	}
+
 	void validateSoloCandidateTechnique()
 	{
 		Board board = Board::fromString(ExampleBoardRaw.c_str());
@@ -197,5 +292,10 @@ namespace dd
 		assert(modified);
 		assert(outcome.size() == 1);
 		assert(outcome.fetch(0).index == 64);
+	}
+
+	void validateTechniques()
+	{
+		validateSoloCandidateTechnique();
 	}
 }

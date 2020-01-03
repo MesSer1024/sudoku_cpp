@@ -26,9 +26,10 @@ int main()
 	validateCandidates();
 	validateBuildBoardFromLayout();
 	validateBitHelpers();
-	validateHelpers();
+	//validateHelpers();
 	
-	validateSoloCandidateTechnique();
+	validateAddCandidates();
+	validateTechniques();
 
 	Board board = Board::fromString(ExampleBoardRaw.c_str());
 	Result outcome;

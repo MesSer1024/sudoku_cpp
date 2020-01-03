@@ -3,6 +3,10 @@
 namespace dd
 {
 
+#if !defined(DD_RELEASE)
+#define VALIDATE_BIT_BOUNDS
+#endif
+
 #ifdef COMPILING_STATIC
 #define DD_SUDOKU_ALGORITHMS_API 
 #else
