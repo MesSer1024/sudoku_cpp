@@ -12,9 +12,9 @@ namespace dd
 {
 	void validateCandidates() {
 		Node node;
-		node.setCandidatesFromMask(Candidates::All);
-		node.removeCandidate(4);
-		node.removeCandidate(8);
+		node.candidatesSet(Candidates::All);
+		node.candidatesRemoveSingle(4);
+		node.candidatesRemoveSingle(8);
 		const u16 c4Mask = Candidates::c4;
 		const u16 candidates = node.getCandidates();
 		const u16 exceptC4Mask = (~c4Mask) & Candidates::All;
@@ -114,8 +114,6 @@ namespace dd
 		}
 		{
 			BoardBits::SudokuBitBoard bitBoard;
-			const u64 ExpectedLowerMask = 1ULL << 63 | 1ULL << 0;
-			const u64 ExpectedUpperMask = 1ULL << (64 % 64) | 1ULL << (65 % 64);
 
 			bitBoard.setBit(0);
 			bitBoard.setBit(63);
@@ -123,12 +121,11 @@ namespace dd
 			bitBoard.setBit(64);
 			bitBoard.setBit(65);
 
-			assert(bitBoard.test(0));
-			assert(bitBoard.test(63));
-			assert(bitBoard.test(64));
+			const u64 ExpectedLowerMask = 1ULL << 63 | 1ULL << 0;
+			const u64 ExpectedUpperMask = 1ULL << (64 % 64) | 1ULL << (65 % 64);
+			const BitBoard ExpectedBitBoard(ExpectedLowerMask, ExpectedUpperMask);
 
-			assert(bitBoard.bits[0] == ExpectedLowerMask);
-			assert(bitBoard.bits[1] == ExpectedUpperMask);
+			assert(bitBoard == ExpectedBitBoard);
 		}
 
 		{
@@ -187,6 +184,32 @@ namespace dd
 			assert(neighbourBitBoards[1] == ExpectedColumn);
 			assert(neighbourBitBoards[2] == ExpectedCell);
 		}
+
+		{
+			for (uint i = 0; i < BoardSize; ++i)
+			{
+				BitBoard neighbours = BoardBits::NeighboursForNodeCombined(i);
+				assert(neighbours.count() == 20);
+			}
+		}
+
+		{
+			const u32 NodeId = 2;
+			BitBoard neighbours = BoardBits::NeighboursForNodeCombined(NodeId);
+			BoardBits::SudokuBitBoard ExpectedRow = BoardBits::BitRow(BoardBits::RowForNodeId(NodeId));
+			BoardBits::SudokuBitBoard ExpectedColumn = BoardBits::BitColumn(BoardBits::ColumnForNodeId(NodeId));
+			BoardBits::SudokuBitBoard ExpectedCell = BoardBits::BitCell(BoardBits::CellForNodeId(NodeId));
+
+			ExpectedRow.clearBit(NodeId);
+			ExpectedColumn.clearBit(NodeId);
+			ExpectedCell.clearBit(NodeId);
+
+			assert((neighbours & ExpectedRow).count() == 8u);
+			assert((neighbours & ExpectedColumn).count() == 8u);
+			assert((neighbours & ExpectedCell).count() == 8u);
+			assert((neighbours & ExpectedRow & ExpectedCell).count() == 2u);
+			assert((neighbours & ExpectedRow & ExpectedColumn).count() == 0u);
+		}
 	}
 
 	void validateBoardAndBitBoardTransformations()
@@ -215,7 +238,7 @@ namespace dd
 			const u16 c1Mask = Candidates::c1;
 			const u16 ModifiedNode = 33;
 			assert(!b.Nodes[ModifiedNode].isSolved());
-			b.Nodes[ModifiedNode].setCandidatesFromMask(c1Mask);
+			b.Nodes[ModifiedNode].candidatesSet(c1Mask);
 
 			BoardBits::SetBitForNodePredicate hasCandidate1 = [c1Mask](const Node& n) { return n.getCandidates() == c1Mask; };
 			BoardBits::SudokuBitBoard bitsWithC1 = BoardBits::bitsPredicate(b, hasCandidate1);
@@ -230,50 +253,19 @@ namespace dd
 		validateStaticUtilBitBoards();
 		validateBoardAndBitBoardTransformations();
 	}
-
-	//void validateHelpers() {
-		//Board b = Board::fromString(ExampleBoardRaw.c_str());
-		//for (uint foo = 0; foo < 9; ++foo)
-		//{
-		//	Row row = getRow(b, foo);
-		//	for (uint i = 0; i < 9; ++i)
-		//	{
-		//		assert(row.data[i] == b.Nodes[i + 9 * foo]);
-		//	}
-		//}
-
-		//for (uint foo = 0; foo < 9; ++foo)
-		//{
-		//	Column col = getColumn(b, foo);
-		//	for (uint i = 0; i < 9; ++i)
-		//	{
-		//		assert(col.data[i] == b.Nodes[i * 9 + foo]);
-		//	}
-		//}
-
-		//for (uint foo = 0; foo < 9; ++foo)
-		//{
-		//	Cell cell = getCell(b, foo);
-		//	assert(&cell.data != nullptr);
-		//	u32 topLeft = topLeftFromCellId(foo);
-		//	u32 expected = (foo % 3 * 3 + ((foo / 3) * 27));
-		//	assert(topLeft == expected);
-		//	assert(cell.data[0] == b.Nodes[expected]);
-		//}
-	//}
 }
 
 
 namespace dd
 {
-	void validateAddCandidates()
+	void validateFillUnsolvedWithAllCandidates()
 	{
 		Board board = Board::fromString(ExampleBoardRaw.c_str());
 		const s64 preNumCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.getCandidates() == Candidates::All; });
 		const s64 preSolvedCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.isSolved(); });
 
 		techniques::fillAllUnsolvedWithAllCandidates(board);
-		
+
 		const s64 postNumCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.getCandidates() == Candidates::All; });
 		const s64 postSolvedCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.isSolved(); });
 
@@ -282,12 +274,99 @@ namespace dd
 		assert(postSolvedCandidates + postNumCandidates == BoardSize);
 	}
 
+	void validateRemoveNaiveCandidates()
+	{
+		Result ignoredResult;
+
+		{
+			Board board = Board::fromString(ExampleBoardRaw.c_str());
+			techniques::fillAllUnsolvedWithAllCandidates(board);
+
+			const s64 preNodesWithAllCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.getCandidates() == Candidates::All; });
+			techniques::removeNaiveCandidates(board, ignoredResult);
+			const s64 postNodesWithAllCandidates = std::count_if(std::begin(board.Nodes), std::end(board.Nodes), [](const Node& node) { return node.getCandidates() == Candidates::All; });
+
+			assert(postNodesWithAllCandidates < preNodesWithAllCandidates);
+			assert(postNodesWithAllCandidates == 0);
+		}
+		{
+			Board board;
+			board.Nodes[0].solve(1);
+
+			techniques::fillAllUnsolvedWithAllCandidates(board);
+			techniques::removeNaiveCandidates(board, ignoredResult);
+
+			const BitBoard unsolved = BoardBits::bitsUnsolved(board);
+			BitBoard unsolvedNeighbours = BoardBits::NeighboursForNodeCombined(0) & unsolved;
+			const u16 ExpectedCandidates = Candidates::All & (~Candidates::c1);
+			const u32 numUnsolvedNeighbours = unsolvedNeighbours.count();
+
+			assert(numUnsolvedNeighbours == 20);
+
+			unsolvedNeighbours.foreachSetBit([&board, ExpectedCandidates](u32 bitIndex) {
+				assert(board.Nodes[bitIndex].getCandidates() == ExpectedCandidates);
+			});
+		}
+		{
+			Board board;
+			board.Nodes[0].solve(1);
+			board.Nodes[1].solve(2);
+			board.Nodes[9].solve(2);
+
+			techniques::fillAllUnsolvedWithAllCandidates(board);
+			techniques::removeNaiveCandidates(board, ignoredResult);
+
+			const BitBoard unsolved = BoardBits::bitsUnsolved(board);
+			const BitBoard unsolvedNeighbours = BoardBits::NeighboursForNodeCombined(0) & unsolved;
+			const u16 ExpectedCandidates = Candidates::All & (~(Candidates::c1 | Candidates::c2));
+			const u32 numUnsolvedNeighbours = unsolvedNeighbours.count();
+
+			assert(numUnsolvedNeighbours == 18);
+			unsolvedNeighbours.foreachSetBit([&board, ExpectedCandidates](u32 bitIndex) {
+				assert(board.Nodes[bitIndex].getCandidates() == ExpectedCandidates);
+			});
+		}
+		{
+			Result outcome;
+			Board board;
+			board.Nodes[0].solve(1);
+			board.Nodes[1].solve(2);
+
+			techniques::fillAllUnsolvedWithAllCandidates(board);
+			techniques::removeNaiveCandidates(board, outcome);
+
+			const u32 numModifiedNodes = outcome.size();
+			assert(numModifiedNodes == 7 + 8 + 8 + 2);
+		}
+		{
+			const u16 ExceptC1Mask = Candidates::All & ~Candidates::c1;
+			Result outcome;
+			Board board;
+			techniques::fillAllUnsolvedWithAllCandidates(board);
+
+			board.Nodes[0].solve(1);
+			board.Nodes[1].candidatesSet(ExceptC1Mask);
+
+			techniques::removeNaiveCandidates(board, outcome);
+			BitBoard modifiedNodes = outcome.pullDirty();
+			assert(modifiedNodes.count() == 8 + 7 + 4);
+			assert(modifiedNodes.test(0) == false);
+			assert(modifiedNodes.test(1) == false);
+		}
+	}
+
+	void validateCandidateAddAndSimpleRemoval()
+	{
+		validateFillUnsolvedWithAllCandidates();
+		validateRemoveNaiveCandidates();
+	}
+
 	void validateSoloCandidateTechnique()
 	{
 		Board board = Board::fromString(ExampleBoardRaw.c_str());
 		Result outcome;
 
-		board.Nodes[64].setCandidatesFromMask(1 << 5);
+		board.Nodes[64].candidatesSet(1 << 5);
 		const bool modified = techniques::soloCandidate(board, outcome);
 		assert(modified);
 		assert(outcome.size() == 1);

@@ -18,19 +18,27 @@ namespace dd
 	}
 }
 
-int main()
+void runValidations()
 {
-	using namespace std;
 	using namespace dd;
 
 	validateCandidates();
 	validateBuildBoardFromLayout();
 	validateBitHelpers();
-	//validateHelpers();
-	
-	validateAddCandidates();
-	validateTechniques();
 
+	validateCandidateAddAndSimpleRemoval();
+	validateTechniques();
+}
+
+int main()
+{
+	runValidations();
+
+	using namespace std;
+	using namespace dd;
+
+
+	
 	Board board = Board::fromString(ExampleBoardRaw.c_str());
 	Result outcome;
 

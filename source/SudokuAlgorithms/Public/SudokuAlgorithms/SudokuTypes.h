@@ -16,7 +16,7 @@ namespace dd
 
 	struct Candidates
 	{
-		static const u16 All = 0x3FF;
+		static const u16 All = 0x3FE;
 		static const u16 c1 = 1 << 1;
 		static const u16 c2 = 1 << 2;
 		static const u16 c3 = 1 << 3;
@@ -48,14 +48,22 @@ namespace dd
 		}
 
 		void solve(u32 value) { bits.all = 0; bits.value = value; bits.solved = 1u; }
-		void setCandidatesFromMask(ValueType candidateMask) { bits.candidates = candidateMask; }
 
-		void removeCandidate(ValueType candidate) { 
+		void candidatesSet(ValueType candidateMask) { bits.candidates = candidateMask; }
+		void candidatesRemoveSingle(ValueType candidate) { 
 			ValueType mask = ~(1 << candidate);
 			bits.candidates &= mask; 
 		}
 
-		bool isEmpty() const { return bits.all == 0; }
+		void candidatesRemoveBySolvedMask(ValueType solvedMask) {
+			bits.candidates = (~solvedMask) & bits.candidates;
+		}
+
+		void candidatesToKeep(ValueType possibleCandidates) {
+			bits.candidates = possibleCandidates & bits.candidates;
+		}
+
+		bool hasValues() const { return bits.all == 0; }
 		bool isSolved() const { return bits.solved; }
 		ValueType getCandidates() const { return bits.candidates; }
 		ValueType getValue() const { return bits.value; }
@@ -156,16 +164,17 @@ namespace dd
 	struct BitBoard
 	{
 	private:
+		u64 bits[2];
 		static constexpr u64 LowerMask = ~0ULL;
 		static constexpr u64 UpperMask = ((1 << (BoardSize - 64)) - 1);
 
 	public:
-		u64 bits[2];
 		struct None {};
 		struct All {};
 		constexpr explicit BitBoard(None) : bits{} {}
 		constexpr explicit BitBoard(All) : bits{LowerMask, UpperMask} {}
 		constexpr BitBoard() : BitBoard(None{}) {}
+		constexpr BitBoard(u64 lower, u64 upper) : bits{ lower, upper } {}
 
 		void modifyBit(uint bitIndex, bool flag) {
 			if (flag)
@@ -183,7 +192,7 @@ namespace dd
 			bits[arrIdx] |= (1ULL << bitIndex);
 		}
 
-		void clearBit(uint bitIndex) {
+		constexpr void clearBit(uint bitIndex) {
 #ifdef VALIDATE_BIT_BOUNDS
 			assert(bitIndex < BoardSize);
 #endif
@@ -200,8 +209,7 @@ namespace dd
 			return flag;
 		}
 
-		void foreachSetBit(BitAction action) const {
-			u8 bitArr[BoardSize]{};
+		constexpr u8 fillSetBits(u8* bitArr) const {
 			u8 count = 0;
 			for (auto i = 0; i < 64; ++i)
 			{
@@ -209,15 +217,25 @@ namespace dd
 				if (bits[0] & testBit)
 					bitArr[count++] = i;
 			}
-			for (auto i = 0; i < 128-BoardSize; ++i)
+			for (auto i = 0; i < 128 - BoardSize; ++i)
 			{
 				const u64 testBit = 1ULL << i;
 				if (bits[1] & testBit)
 					bitArr[count++] = 64 + i;
 			}
+			return count;
+		}
+
+		void foreachSetBit(BitAction action) const {
+			u8 bitArr[BoardSize];
+			u8 count = fillSetBits(bitArr);
 
 			for (auto i = 0; i < count; ++i)
 				action(bitArr[i]);
+		}
+
+		bool hasValues() const {
+			return (bits[0] | bits[1]) != 0;
 		}
 
 		u32 count() const {
@@ -237,6 +255,37 @@ namespace dd
 			inverted.bits[1] = ~bits[1];
 			inverted.bits[1] &= UpperMask;
 			return inverted;
+		}
+
+		constexpr BitBoard operator&(const BitBoard& other) const {
+			BitBoard out;
+			out.bits[0] = this->bits[0] & other.bits[0];
+			out.bits[1] = this->bits[1] & other.bits[1];
+			return out;
+		}
+
+		constexpr BitBoard operator|(const BitBoard& other) const {
+			BitBoard out;
+			out.bits[0] = this->bits[0] | other.bits[0];
+			out.bits[1] = this->bits[1] | other.bits[1];
+			return out;
+		}
+
+		constexpr BitBoard operator^(const BitBoard& other) const {
+			BitBoard out;
+			out.bits[0] = this->bits[0] ^ other.bits[0];
+			out.bits[1] = this->bits[1] ^ other.bits[1];
+			return out;
+		}
+
+		constexpr void operator|=(const BitBoard& other) {
+			this->bits[0] |= other.bits[0];
+			this->bits[1] |= other.bits[1];
+		}
+
+		constexpr void operator&=(const BitBoard& other) {
+			this->bits[0] &= other.bits[0];
+			this->bits[1] &= other.bits[1];
 		}
 	};
 
@@ -307,12 +356,31 @@ namespace dd
 		}
 
 		// is inclusive [contains self(nodeId)], is this correct?
+		static constexpr BitBoard NeighboursForNodeCombined(uint nodeId) {
+			const uint rowId = RowForNodeId(nodeId);
+			const uint columnId = ColumnForNodeId(nodeId);
+			const uint cellId = CellForNodeId(nodeId);
+
+			BitBoard b = BitRow(rowId) | BitColumn(columnId) | BitCell(cellId);
+			b.clearBit(nodeId);
+			return b;
+		}
+
+		// is inclusive [contains self(nodeId)], is this correct?
+		static constexpr BitBoards3 NeighboursForNodeClearSelf(uint nodeId) {
+			BitBoards3 boards = NeighboursForNode(nodeId);
+			boards[0].clearBit(nodeId);
+			boards[1].clearBit(nodeId);
+			boards[2].clearBit(nodeId);
+			return boards;
+		}
+
 		static constexpr BitBoards3 NeighboursForNode(uint nodeId) {
 			const uint rowId = RowForNodeId(nodeId);
 			const uint columnId = ColumnForNodeId(nodeId);
 			const uint cellId = CellForNodeId(nodeId);
 
-			return BitBoards3{ BitRow(rowId) , BitColumn(columnId), BitCell(cellId) };
+			return BitBoards3 { BitRow(rowId) , BitColumn(columnId), BitCell(cellId) };
 		}
 
 		//////////////////////////////////////////////////////
