@@ -17,6 +17,14 @@ namespace dd
 		Node prev;
 	};
 
+	enum class TechniqueUsed {
+		None = 0,
+		NaiveCandidates,
+		NakedSingle,
+		HiddenSingle,
+		NakedPair,
+	};
+
 	struct Result
 	{
 		void storePreModification(const Node* nodes, const BitBoard& affectedNodes)
@@ -55,8 +63,10 @@ namespace dd
 		void reset() {
 			Changes.clear();
 			_dirty = {};
+			Technique = TechniqueUsed::None;
 		}
 
+		TechniqueUsed Technique { TechniqueUsed::None };
 	private:
 		std::vector<Change> Changes;
 		BitBoard _dirty;
@@ -64,6 +74,53 @@ namespace dd
 
 	namespace techniques
 	{
+		//---------------- Sudoku Solver -------------
+		//Check for solved cells
+		//Show Possibles	No
+
+		//		x: Basic Candidates				removeNaiveCandidates() [All solved neighbours toMask -> remove as candidates on unsolved]
+		//		0: Naked Single					removeNakedSingle() [ All unsolved nodes -> If a node only has one candidate, it can be solved]
+		//		1: Hidden Singles				removeHiddenSingle() [ All unsolved neighbours -> if this is only occurance of candidate, it can be solved]
+		//		2: Naked Pairs/Triples	
+		//		3: Hidden Pairs/Triples	 
+		//		4: Naked Quads	 
+		//		5: Pointing Pairs	 
+		//		6: Box/Line Reduction
+
+		//Tough Strategies	
+		//		7: X-Wing	 
+		//		8: Simple Colouring	 
+		//		9: Y-Wing	 
+		//		10: Sword-Fish	 
+		//		11: XYZ Wing	 
+		//Diabolical Strategies	
+		//		12: X-Cycles	 
+		//		13: XY-Chain	 
+		//		14: 3D Medusa	 
+		//		15: Jelly-Fish	 
+		//		16: Unique Rectangles	 
+		//		17: Extended Unique Rect.	 
+		//		18: Hidden Unique Rect's	 
+		//		19: WXYZ Wing	 
+		//		20: Aligned Pair Exclusion	 
+		//Extreme Strategies	
+		//		21: Grouped X-Cycles	 
+		//		22: Empty Rectangles	 
+		//		23: Finned X-Wing	 
+		//		24: Finned Sword-Fish	 
+		//		25: Altern. Inference Chains	 
+		//		26: Sue-de-Coq	 
+		//		27: Digit Forcing Chains	 
+		//		28: Nishio Forcing Chains	 
+		//		29: Cell Forcing Chains	 
+		//		30: Unit Forcing Chains	 
+		//		31: Almost Locked Sets	 
+		//		32: Death Blossom	 
+		//		33: Pattern Overlay Method	 
+		//		34: Quad Forcing Chains	 
+		//"Trial and Error"	
+		//		35: Bowman's Bingo
+
 		void fillAllUnsolvedWithAllCandidates(Board& b)
 		{
 			BitAction applyAllCandidatesAction = [&b](u32 bitIndex) {
@@ -85,9 +142,13 @@ namespace dd
 			// foreach solved node in column ...
 			// foreach solved node in cell ...
 
-			bool modified = false;
-			BitBoard solved = BoardBits::bitsSolved(b);
-			BitBoard unsolved = BoardBits::bitsUnsolved(b);
+			// might be possible to do in parallell... but job is probably too small to be useful to parallell
+			// build all possible masks and what nodes they should affect and store in "storage"
+			// merge results
+			// apply results
+
+			const BitBoard solved = BoardBits::bitsSolved(b);
+			const BitBoard unsolved = BoardBits::bitsUnsolved(b);
 			
 			{
 				const BoardBits::BitBoards9 rows = BoardBits::AllRows();
@@ -98,7 +159,7 @@ namespace dd
 					{
 						const u16 mask = toCandidateMask(solvedValues);
 						BitBoard modifiedNodes = wouldRemoveCandidates(b.Nodes, unsolved & rows[i], mask);
-						if (modifiedNodes.hasValues())
+						if (modifiedNodes.notEmpty())
 						{
 							result.storePreModification(b.Nodes, modifiedNodes);
 							removeCandidatesForNodes(b.Nodes, modifiedNodes, mask);
@@ -115,7 +176,7 @@ namespace dd
 					{
 						const u16 mask = toCandidateMask(solvedValues);
 						BitBoard modifiedNodes = wouldRemoveCandidates(b.Nodes, unsolved & cols[i], mask);
-						if (modifiedNodes.hasValues())
+						if (modifiedNodes.notEmpty())
 						{
 							result.storePreModification(b.Nodes, modifiedNodes);
 							removeCandidatesForNodes(b.Nodes, modifiedNodes, mask);
@@ -132,7 +193,7 @@ namespace dd
 					{
 						const u16 mask = toCandidateMask(solvedValues);
 						BitBoard modifiedNodes = wouldRemoveCandidates(b.Nodes, unsolved & cells[i], mask);
-						if (modifiedNodes.hasValues())
+						if (modifiedNodes.notEmpty())
 						{
 							result.storePreModification(b.Nodes, modifiedNodes);
 							removeCandidatesForNodes(b.Nodes, modifiedNodes, mask);
@@ -141,25 +202,39 @@ namespace dd
 				}
 			}
 
-			return modified;
+			return result.size() > 0;
 		}
 
-		bool soloCandidate(const Board& b, Result& outResult)
+		// I am considering placing all different candidates in a seperate bitboard
+		// such as BitBoard getNodesWithC1(), BitBoard getNodesWithC2(), BitBoard getNodesWithC3() ...
+		// should make it possible to query status in a different way that feels efficient
+		bool removeNakedSingle(Board& b, Result& outResult)
 		{
-			u8 i = 0;
-			for (Node n : b.Nodes)
-			{
-				std::bitset<9> candidates(n.getCandidates());
-				if (candidates.count() == 1)
-				{
-					unsigned long bitIndex;
-					_BitScanForward(&bitIndex, candidates.to_ulong());
-					outResult.append(n, i);
-					n.solve(bitIndex);
-					return true;
+			BitBoard affectedNodes;
+			BitBoard unsolved = BoardBits::bitsUnsolved(b);
+			unsolved.foreachSetBit([&b, &affectedNodes](u32 bitIndex) {
+				if (countCandidates(b.Nodes[bitIndex].getCandidates()) == 1) {
+					affectedNodes.setBit(bitIndex);
 				}
-				i++;
+			});
+
+			if (affectedNodes.notEmpty()) {
+				outResult.storePreModification(b.Nodes, affectedNodes);
+				affectedNodes.foreachSetBit([&b](u32 bitIndex) {
+					b.Nodes[bitIndex].solve(getOnlyCandidateFromMask(b.Nodes[bitIndex].getCandidates()));
+				});
+				return true;
 			}
+			return false;
+		}
+
+		// [ All unsolved in dimension -> if candidate only exists in one node in dimension, it can be solved]
+		bool removeHiddenSingle(Board& b, Result& result) {
+			const BitBoard unsolved = BoardBits::bitsUnsolved(b);
+			const BoardBits::BitBoards9 candidates = buildCandidateBoards(b);
+			BitBoard affected;
+
+			//assert(false);
 			return false;
 		}
 	}

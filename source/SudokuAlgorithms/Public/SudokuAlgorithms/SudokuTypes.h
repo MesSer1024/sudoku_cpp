@@ -63,7 +63,7 @@ namespace dd
 			bits.candidates = possibleCandidates & bits.candidates;
 		}
 
-		bool hasValues() const { return bits.all == 0; }
+		bool notEmpty() const { return bits.all == 0; }
 		bool isSolved() const { return bits.solved; }
 		ValueType getCandidates() const { return bits.candidates; }
 		ValueType getValue() const { return bits.value; }
@@ -234,7 +234,7 @@ namespace dd
 				action(bitArr[i]);
 		}
 
-		bool hasValues() const {
+		bool notEmpty() const {
 			return (bits[0] | bits[1]) != 0;
 		}
 
@@ -355,7 +355,6 @@ namespace dd
 			return cellId;
 		}
 
-		// is inclusive [contains self(nodeId)], is this correct?
 		static constexpr BitBoard NeighboursForNodeCombined(uint nodeId) {
 			const uint rowId = RowForNodeId(nodeId);
 			const uint columnId = ColumnForNodeId(nodeId);
@@ -366,7 +365,6 @@ namespace dd
 			return b;
 		}
 
-		// is inclusive [contains self(nodeId)], is this correct?
 		static constexpr BitBoards3 NeighboursForNodeClearSelf(uint nodeId) {
 			BitBoards3 boards = NeighboursForNode(nodeId);
 			boards[0].clearBit(nodeId);

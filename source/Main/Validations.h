@@ -367,7 +367,7 @@ namespace dd
 		Result outcome;
 
 		board.Nodes[64].candidatesSet(1 << 5);
-		const bool modified = techniques::soloCandidate(board, outcome);
+		const bool modified = techniques::removeNakedSingle(board, outcome);
 		assert(modified);
 		assert(outcome.size() == 1);
 		assert(outcome.fetch(0).index == 64);
