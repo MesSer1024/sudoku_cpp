@@ -8,15 +8,17 @@
 
 namespace dd
 {
-	u32 buildValueMaskFromSolvedNodes(const Node* nodes, const BitBoard& affectedNodes)
+	u16 buildValueMaskFromSolvedNodes(const Node* nodes, const BitBoard& affectedNodes)
 	{
-		u32 rowMask = 0U;
+		u32 valueMask = 0U;
 
-		affectedNodes.foreachSetBit([&rowMask, nodes](u32 bitIndex) {
-			rowMask |= (1u << nodes[bitIndex].getValue());
+		affectedNodes.foreachSetBit([&valueMask, nodes](u32 bitIndex) {
+			valueMask |= (1u << nodes[bitIndex].getValue());
 		});
 
-		return rowMask;
+		if(valueMask & 1u)
+			assert(false);
+		return static_cast<u16>(valueMask);
 	}
 
 	u16 toCandidateMask(u32 valueMask)
@@ -59,9 +61,9 @@ namespace dd
 		for (uint i = 0; i < BoardSize; ++i) {
 			if (!b.Nodes[i].isSolved()) {
 				u16 candidate = b.Nodes[i].getCandidates();
-				for (u16 c = 1; c <= 9; ++c) {
-					if (candidate & c) {
-						out[c - 1].setBit(i);
+				for (u16 c = 0; c < 9; ++c) {
+					if (candidate & AllCandidatesArray[c]) {
+						out[c].setBit(i);
 					}
 				}
 			}

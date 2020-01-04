@@ -232,10 +232,46 @@ namespace dd
 		bool removeHiddenSingle(Board& b, Result& result) {
 			const BitBoard unsolved = BoardBits::bitsUnsolved(b);
 			const BoardBits::BitBoards9 candidates = buildCandidateBoards(b);
-			BitBoard affected;
+			const BoardBits::BitBoards27 allDirections = BoardBits::AllDimensions();
 
-			//assert(false);
-			return false;
+			BitBoard unhandledNodes(BitBoard::All{});
+			u8 affectedNodes[BoardSize];
+			u8 targetValue[BoardSize];
+			u8 numAffectedNodes = 0;
+
+			for (uint c = 0; c < 9; ++c) {
+				for (uint i = 0; i < 27; ++i) {
+					// for all candidates , all possible directions, find unsolved with that candidate that we have not already fixed
+					const BitBoard maskedNodesWithCandidate = unsolved & allDirections[i] & candidates[c];
+					if (maskedNodesWithCandidate.count() == 1) {
+						const u32 bitPos = maskedNodesWithCandidate.firstOne();
+
+						if (unhandledNodes.test(bitPos))
+						{
+							unhandledNodes.clearBit(bitPos);
+
+							affectedNodes[numAffectedNodes] = static_cast<u8>(bitPos);
+							targetValue[numAffectedNodes] = static_cast<u8>(c + 1);
+
+							numAffectedNodes++;
+						}
+					}
+				}
+			}
+
+			if (numAffectedNodes > 0) {
+				for (uint i = 0; i < numAffectedNodes; ++i) {
+					const u8 nodeId = affectedNodes[i];
+					result.append(b.Nodes[nodeId], nodeId);
+				}
+				for (uint i = 0; i < numAffectedNodes; ++i) {
+					const u8 nodeId = affectedNodes[i];
+					const u8 value = targetValue[i];
+					b.Nodes[nodeId].solve(value);
+				}
+			}
+
+			return numAffectedNodes > 0;
 		}
 	}
 }

@@ -28,6 +28,9 @@ namespace dd
 		static const u16 c9 = 1 << 9;
 	};
 
+	constexpr u16 AllCandidatesArray[9] = { Candidates::c1, Candidates::c2, Candidates::c3, Candidates::c4, Candidates::c5, Candidates::c6, Candidates::c7, Candidates::c8, Candidates::c9 };
+
+
 	struct Node
 	{
 		using ValueType = u16;
@@ -209,6 +212,18 @@ namespace dd
 			return flag;
 		}
 
+		u8 firstOne() const {
+			u32 value;
+			if (!_BitScanForward64(&value, bits[0]))
+			{
+				if (!_BitScanForward64(&value, bits[1]))
+					return 128;
+				else
+					value += 64;
+			}
+			return static_cast<u8>(value);
+		}
+
 		constexpr u8 fillSetBits(u8* bitArr) const {
 			u8 count = 0;
 			for (auto i = 0; i < 64; ++i)
@@ -292,8 +307,9 @@ namespace dd
 	struct BoardBits
 	{
 		using SudokuBitBoard = BitBoard;
-		using BitBoards9 = std::array<SudokuBitBoard, 9>; // for instance all different rows
 		using BitBoards3 = std::array<SudokuBitBoard, 3>; // for instance neighbours given a specific node
+		using BitBoards9 = std::array<SudokuBitBoard, 9>; // for instance all different rows
+		using BitBoards27 = std::array<SudokuBitBoard, 27>; // for instance all different rows
 
 		static constexpr SudokuBitBoard BitRow(uint rowId) {
 			SudokuBitBoard row{};
@@ -342,6 +358,16 @@ namespace dd
 			for (uint i = 0; i < 9; ++i)
 				cells[i] = BitCell(i);
 			return cells;
+		}
+
+		static constexpr BitBoards27 AllDimensions() {
+			BitBoards27 dimensions;
+			for (uint i = 0; i < 9; ++i) {
+				dimensions[i] = BitRow(i);
+				dimensions[i + 9] = BitColumn(i);
+				dimensions[i + 18] = BitCell(i);
+			}
+			return dimensions;
 		}
 
 		static constexpr uint RowForNodeId(uint nodeId) { return nodeId / 9; }

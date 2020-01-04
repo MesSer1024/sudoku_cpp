@@ -93,9 +93,11 @@ int main()
 		Result outcome;
 
 		bool solved = beginSolveBoard(board, outcome);
+		printSudokuBoard(board);
 		if (solved)
 			validateSolvedCorectly(board);
-		printSudokuBoard(board);
+		else
+			validateNoDuplicates(board);
 		cout << "BoardIndex: " << currBoardIndex << "\t\t" << (solved ? "solved" : "unsolved") << endl;
 
 		if (StopOnFirstUnsolved && !solved)
