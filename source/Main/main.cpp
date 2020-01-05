@@ -13,22 +13,18 @@ namespace dd
 {
 	bool runTechniques(Board& b, Result& result) {
 		if (techniques::removeNaiveCandidates(b, result)) {
-			result.Technique = TechniqueUsed::NaiveCandidates;
 			return true;
 		}
 
 		if (techniques::removeNakedSingle(b, result)) {
-			result.Technique = TechniqueUsed::NakedSingle;
 			return true;
 		}
 
 		if (techniques::removeHiddenSingle(b, result)) {
-			result.Technique = TechniqueUsed::HiddenSingle;
 			return true;
 		}
 
 		if (techniques::removeNakedPair(b, result)) {
-			result.Technique = TechniqueUsed::NakedPair;
 			return true;
 		}
 
@@ -51,7 +47,7 @@ namespace dd
 		while (unsolved && i < 2000) {
 			result.reset();
 			if (runTechniques(b, result)) {
-				if(result.Technique > TechniqueUsed::NaiveCandidates)
+				if(result.Technique > Techniques::NaiveCandidates)
 					printf("Made %u changes with technique %u\n", result.size(), result.Technique);
 			}
 			i++;

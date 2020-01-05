@@ -17,12 +17,13 @@ namespace dd
 		Node prev;
 	};
 
-	enum class TechniqueUsed {
+	enum class Techniques {
 		None = 0,
 		NaiveCandidates,
 		NakedSingle,
 		HiddenSingle,
 		NakedPair,
+		NakedTriplet,
 	};
 
 	struct Result
@@ -63,10 +64,10 @@ namespace dd
 		void reset() {
 			Changes.clear();
 			_dirty = {};
-			Technique = TechniqueUsed::None;
+			Technique = Techniques::None;
 		}
 
-		TechniqueUsed Technique { TechniqueUsed::None };
+		Techniques Technique { Techniques::None };
 	private:
 		std::vector<Change> Changes;
 		BitBoard _dirty;
@@ -79,10 +80,10 @@ namespace dd
 		//Show Possibles	No
 
 		//		x: Basic Candidates				removeNaiveCandidates() [All solved neighbours toMask -> remove as candidates on unsolved]
-		//		0: Naked Single					removeNakedSingle() [ All unsolved nodes -> If a node only has one candidate, it can be solved]
-		//		1: Hidden Singles				removeHiddenSingle() [ All unsolved neighbours -> if this is only occurance of candidate, it can be solved]
-		//		2: Naked Pairs/Triples			removeNakedPair() // [ All unsolved in dimension -> if 2 nodes only have 2 candidates and share them, all other nodes in dimension can remove those candidates]
-
+		//		0: Naked Single					removeNakedSingle()		[ All unsolved nodes -> If a node only has one candidate, it can be solved]
+		//		1: Hidden Singles				removeHiddenSingle()	[ All unsolved neighbours -> if this is only occurance of candidate, it can be solved]
+		//		2: Naked Pairs/Triples			removeNakedPair()		[ All unsolved in dimension -> if 2 nodes only have 2 candidates and share them, all other shared neighbours can remove those candidates]
+		//										removeNakedTriplet()	[ All unsolved in dimension -> if 3 nodes only have 3 candidates and share them, all other shared neighbours can remove those candidates]
 		//		3: Hidden Pairs/Triples	 
 		//		4: Naked Quads	 
 		//		5: Pointing Pairs	 
@@ -134,71 +135,20 @@ namespace dd
 
 		bool removeNaiveCandidates(Board& b, Result& result)
 		{
-			// foreach solved node in row
-			//		build mask of solved values and invert relevant bits to generate mask of possible candidates
-			//		
-			//		locate all nodes in row that would have a candidate removed by this candidateMask (to know which ones are truly modified)
-			//		store the previous values for all nodes that are about to change in "result"
-			//		remove any candidates for affected nodes
-			// foreach solved node in column ...
-			// foreach solved node in block ...
-
-			// might be possible to do in parallell... but job is probably too small to be useful to parallell
-			// build all possible masks and what nodes they should affect and store in "storage"
-			// merge results
-			// apply results
+			result.Technique = Techniques::NaiveCandidates;
 
 			const BitBoard solved = BoardBits::bitsSolved(b);
 			const BitBoard unsolved = BoardBits::bitsUnsolved(b);
-			
-			{
-				const BoardBits::BitBoards9 rows = BoardBits::AllRows();
-				for (uint i = 0; i < 9; ++i)
-				{
-					const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, solved & rows[i]);
-					if (solvedValues && solvedValues != Candidates::All)
+			const BoardBits::BitBoards27 dimensions = BoardBits::AllDimensions();
+
+			for (auto&& board : dimensions) {
+				const u16 mask = toCandidateMask(buildValueMaskFromSolvedNodes(b.Nodes, solved & board));
+				if (mask && mask != Candidates::All) {
+					BitBoard modifiedNodes = wouldRemoveCandidates(b.Nodes, unsolved & board, mask);
+					if (modifiedNodes.notEmpty())
 					{
-						const u16 mask = toCandidateMask(solvedValues);
-						BitBoard modifiedNodes = wouldRemoveCandidates(b.Nodes, unsolved & rows[i], mask);
-						if (modifiedNodes.notEmpty())
-						{
-							result.storePreModification(b.Nodes, modifiedNodes);
-							removeCandidatesForNodes(b.Nodes, modifiedNodes, mask);
-						}
-					}
-				}
-			}
-			{
-				const BoardBits::BitBoards9 cols = BoardBits::AllColumns();
-				for (uint i = 0; i < 9; ++i)
-				{
-					const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, solved & cols[i]);
-					if (solvedValues && solvedValues != Candidates::All)
-					{
-						const u16 mask = toCandidateMask(solvedValues);
-						BitBoard modifiedNodes = wouldRemoveCandidates(b.Nodes, unsolved & cols[i], mask);
-						if (modifiedNodes.notEmpty())
-						{
-							result.storePreModification(b.Nodes, modifiedNodes);
-							removeCandidatesForNodes(b.Nodes, modifiedNodes, mask);
-						}
-					}
-				}
-			}
-			{
-				const BoardBits::BitBoards9 blocks = BoardBits::AllBlocks();
-				for (uint i = 0; i < 9; ++i)
-				{
-					const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, solved & blocks[i]);
-					if (solvedValues && solvedValues != Candidates::All)
-					{
-						const u16 mask = toCandidateMask(solvedValues);
-						BitBoard modifiedNodes = wouldRemoveCandidates(b.Nodes, unsolved & blocks[i], mask);
-						if (modifiedNodes.notEmpty())
-						{
-							result.storePreModification(b.Nodes, modifiedNodes);
-							removeCandidatesForNodes(b.Nodes, modifiedNodes, mask);
-						}
+						result.storePreModification(b.Nodes, modifiedNodes);
+						removeCandidatesForNodes(b.Nodes, modifiedNodes, mask);
 					}
 				}
 			}
@@ -206,10 +156,12 @@ namespace dd
 			return result.size() > 0;
 		}
 
-		bool removeNakedSingle(Board& b, Result& outResult)
+		bool removeNakedSingle(Board& b, Result& result)
 		{
-			BitBoard affectedNodes;
+			result.Technique = Techniques::NakedSingle;
+
 			BitBoard unsolved = BoardBits::bitsUnsolved(b);
+			BitBoard affectedNodes;
 			unsolved.foreachSetBit([&b, &affectedNodes](u32 bitIndex) {
 				if (countCandidates(b.Nodes[bitIndex].getCandidates()) == 1) {
 					affectedNodes.setBit(bitIndex);
@@ -217,17 +169,18 @@ namespace dd
 			});
 
 			if (affectedNodes.notEmpty()) {
-				outResult.storePreModification(b.Nodes, affectedNodes);
+				result.storePreModification(b.Nodes, affectedNodes);
 				affectedNodes.foreachSetBit([&b](u32 bitIndex) {
 					b.Nodes[bitIndex].solve(getOnlyCandidateFromMask(b.Nodes[bitIndex].getCandidates()));
 				});
-				return true;
 			}
-			return false;
+			return result.size() > 0;
 		}
 
 		// [ All unsolved in dimension -> if candidate only exists in one node in dimension, it can be solved]
 		bool removeHiddenSingle(Board& b, Result& result) {
+			result.Technique = Techniques::HiddenSingle;
+
 			const BoardBits::BitBoards9 candidates = buildCandidateBoards(b);
 			const BoardBits::BitBoards27 allDirections = BoardBits::AllDimensions();
 
@@ -282,13 +235,13 @@ namespace dd
 
 		// [ All unsolved in dimension -> if 2 nodes only have 2 candidates and they are the same candidates, all other nodes in dimension can remove those candidates]
 		bool removeNakedPair(Board& b, Result& result) {
+			result.Technique = Techniques::NakedPair;
+
 			const BoardBits::BitBoards9 candidates = buildCandidateBoards(b);
 			const BoardBits::BitBoards27 allDirections = BoardBits::AllDimensions();
 			
 			NakedPairMatch matches[256];
-			u8 numMatches = 0;
-
-
+			u16 numMatches = 0;
 
 			for (auto&& dimension : allDirections) {
 				BoardBits::BitBoards9 potentialNodes;
@@ -330,6 +283,7 @@ namespace dd
 
 			// see if any neighbours to the nodes located have any of marked candidates
 			if (numMatches > 0) {
+				assert(numMatches < 256);
 				for (uint i = 0; i < numMatches; ++i) {
 					const NakedPairMatch& match = matches[i];
 
@@ -348,6 +302,12 @@ namespace dd
 					}
 				}
 			}
+
+			return result.size() > 0;
+		}
+
+		bool removeNakedTriplet(Board& b, Result& result) {
+			result.Technique = Techniques::NakedTriplet;
 
 			return result.size() > 0;
 		}
