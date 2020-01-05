@@ -155,10 +155,10 @@ namespace dd
 		}
 	};
 
-	constexpr u16 topLeftFromCellId(uint cellId)
+	constexpr u16 topLeftFromblockId(uint blockId)
 	{
-		u32 rOffset = (cellId / 3);
-		u32 cOffset = (cellId % 3);
+		u32 rOffset = (blockId / 3);
+		u32 cOffset = (blockId % 3);
 		return
 			static_cast<u16>(27 * rOffset +
 			3 * cOffset);
@@ -325,16 +325,16 @@ namespace dd
 			return col;
 		}
 
-		static constexpr SudokuBitBoard BitCell(uint cellId) {
-			SudokuBitBoard cell{};
-			u16 top_left = topLeftFromCellId(cellId);
+		static constexpr SudokuBitBoard BitBlock(uint blockId) {
+			SudokuBitBoard block{};
+			u16 top_left = topLeftFromblockId(blockId);
 			for (uint i = 0; i < 3; ++i)
 			{
-				cell.setBit(top_left + i * 9 + 0);
-				cell.setBit(top_left + i * 9 + 1);
-				cell.setBit(top_left + i * 9 + 2);
+				block.setBit(top_left + i * 9 + 0);
+				block.setBit(top_left + i * 9 + 1);
+				block.setBit(top_left + i * 9 + 2);
 			}
-			return cell;
+			return block;
 		}
 
 		//////////////////////////////////////////////////////
@@ -353,11 +353,11 @@ namespace dd
 			return columns;
 		}
 
-		static constexpr BitBoards9 AllCells() {
-			BitBoards9 cells;
+		static constexpr BitBoards9 AllBlocks() {
+			BitBoards9 blocks;
 			for (uint i = 0; i < 9; ++i)
-				cells[i] = BitCell(i);
-			return cells;
+				blocks[i] = BitBlock(i);
+			return blocks;
 		}
 
 		static constexpr BitBoards27 AllDimensions() {
@@ -365,28 +365,28 @@ namespace dd
 			for (uint i = 0; i < 9; ++i) {
 				dimensions[i] = BitRow(i);
 				dimensions[i + 9] = BitColumn(i);
-				dimensions[i + 18] = BitCell(i);
+				dimensions[i + 18] = BitBlock(i);
 			}
 			return dimensions;
 		}
 
 		static constexpr uint RowForNodeId(uint nodeId) { return nodeId / 9; }
 		static constexpr uint ColumnForNodeId(uint nodeId) { return nodeId % 9; }
-		static constexpr uint CellForNodeId(uint nodeId) { 
+		static constexpr uint BlockForNodeId(uint nodeId) { 
 			const uint rowId = RowForNodeId(nodeId);
 			const uint columnId = ColumnForNodeId(nodeId);
 			const uint rowOffset = (rowId / 3) * 3; // only take full 3's and multiply with 3 [0..2] --> 0, [3..5] --> 3
 			const uint colOffset = columnId / 3;
-			const uint cellId = rowOffset + colOffset;
-			return cellId;
+			const uint blockId = rowOffset + colOffset;
+			return blockId;
 		}
 
 		static constexpr BitBoard NeighboursForNodeCombined(uint nodeId) {
 			const uint rowId = RowForNodeId(nodeId);
 			const uint columnId = ColumnForNodeId(nodeId);
-			const uint cellId = CellForNodeId(nodeId);
+			const uint blockId = BlockForNodeId(nodeId);
 
-			BitBoard b = BitRow(rowId) | BitColumn(columnId) | BitCell(cellId);
+			BitBoard b = BitRow(rowId) | BitColumn(columnId) | BitBlock(blockId);
 			b.clearBit(nodeId);
 			return b;
 		}
@@ -402,9 +402,32 @@ namespace dd
 		static constexpr BitBoards3 NeighboursForNode(uint nodeId) {
 			const uint rowId = RowForNodeId(nodeId);
 			const uint columnId = ColumnForNodeId(nodeId);
-			const uint cellId = CellForNodeId(nodeId);
+			const uint blockId = BlockForNodeId(nodeId);
 
-			return BitBoards3 { BitRow(rowId) , BitColumn(columnId), BitCell(cellId) };
+			return BitBoards3 { BitRow(rowId) , BitColumn(columnId), BitBlock(blockId) };
+		}
+
+		static constexpr SudokuBitBoard SharedNeighboursClearSelf(uint node1, uint node2) {
+			const u32 c1 = ColumnForNodeId(node1);
+			const u32 c2 = ColumnForNodeId(node2);
+			const u32 r1 = RowForNodeId(node1);
+			const u32 r2 = RowForNodeId(node2);
+			const u32 b1 = BlockForNodeId(node1);
+			const u32 b2 = BlockForNodeId(node2);
+			
+			BitBoard sharedNeighbours;
+
+			if (c1 == c2)
+				sharedNeighbours |= BitColumn(c1);
+			if (r1 == r2)
+				sharedNeighbours |= BitRow(r1);
+			if (b1 == b2)
+				sharedNeighbours |= BitBlock(b1);
+
+			sharedNeighbours.clearBit(node1);
+			sharedNeighbours.clearBit(node2);
+			
+			return sharedNeighbours;
 		}
 
 		//////////////////////////////////////////////////////

@@ -24,7 +24,7 @@ namespace dd
 		assert(BoardBits::bitsUnsolved(b).count() == 0);
 		auto rows = BoardBits::AllRows();
 		auto cols = BoardBits::AllColumns();
-		auto cells = BoardBits::AllCells();
+		auto blocks = BoardBits::AllBlocks();
 
 		for (auto dimension : rows) {
 			const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, dimension);
@@ -36,7 +36,7 @@ namespace dd
 			assert(solvedValues == Candidates::All);
 		}
 		
-		for (auto dimension : cells) {
+		for (auto dimension : blocks) {
 			const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, dimension);
 			assert(solvedValues == Candidates::All);
 		}

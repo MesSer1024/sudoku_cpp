@@ -27,6 +27,11 @@ namespace dd
 			return true;
 		}
 
+		if (techniques::removeNakedPair(b, result)) {
+			result.Technique = TechniqueUsed::NakedPair;
+			return true;
+		}
+
 		return false;
 	}
 
@@ -68,6 +73,7 @@ void runValidations()
 	using namespace dd;
 
 	validateCandidates();
+	validateUtilities();
 	validateBuildBoardFromLayout();
 	validateBitHelpers();
 
@@ -78,7 +84,7 @@ void runValidations()
 int main()
 {
 	const bool Validate = true;
-	const bool StopOnFirstUnsolved = true;
+	const bool StopOnFirstUnsolved = false;
 
 	if(Validate)
 		runValidations();
@@ -105,6 +111,7 @@ int main()
 		currBoardIndex++;
 	}
 
+	cout << "DONE!" << endl;
 	cin.get();
 	return 0;
 }

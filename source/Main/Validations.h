@@ -138,15 +138,15 @@ namespace dd
 		{
 			const uint RowId = 3;
 			const uint ColumnId = 3;
-			const uint CellId = 3;
+			const uint blockId = 3;
 
 			BoardBits::SudokuBitBoard row = BoardBits::BitRow(RowId);
 			BoardBits::SudokuBitBoard column = BoardBits::BitColumn(ColumnId);
-			BoardBits::SudokuBitBoard cell = BoardBits::BitCell(CellId);
+			BoardBits::SudokuBitBoard block = BoardBits::BitBlock(blockId);
 
 			assert(row.count() == 9);
 			assert(column.count() == 9);
-			assert(cell.count() == 9);
+			assert(block.count() == 9);
 			
 			for (uint i = 0; i < 9; ++i)
 			{
@@ -154,35 +154,35 @@ namespace dd
 				assert(column.test(i * 9 + ColumnId));
 			}
 
-			assert(cell.test(27));
-			assert(cell.test(28));
-			assert(cell.test(29));
-			assert(cell.test(36));
-			assert(cell.test(37));
-			assert(cell.test(38));
-			assert(cell.test(45));
-			assert(cell.test(46));
-			assert(cell.test(47));
+			assert(block.test(27));
+			assert(block.test(28));
+			assert(block.test(29));
+			assert(block.test(36));
+			assert(block.test(37));
+			assert(block.test(38));
+			assert(block.test(45));
+			assert(block.test(46));
+			assert(block.test(47));
 		}
 
 		{
 			BoardBits::BitBoards3 neighbourBitBoards = BoardBits::NeighboursForNode(0);
 			BoardBits::SudokuBitBoard ExpectedRow = BoardBits::BitRow(0);
 			BoardBits::SudokuBitBoard ExpectedColumn = BoardBits::BitColumn(0);
-			BoardBits::SudokuBitBoard ExpectedCell = BoardBits::BitCell(0);
+			BoardBits::SudokuBitBoard ExpectedBlock = BoardBits::BitBlock(0);
 			assert(neighbourBitBoards[0] == ExpectedRow);
 			assert(neighbourBitBoards[1] == ExpectedColumn);
-			assert(neighbourBitBoards[2] == ExpectedCell);
+			assert(neighbourBitBoards[2] == ExpectedBlock);
 		}
 
 		{
 			BoardBits::BitBoards3 neighbourBitBoards = BoardBits::NeighboursForNode(43); // { 4, 7, 5 }
 			BoardBits::SudokuBitBoard ExpectedRow = BoardBits::BitRow(4);
 			BoardBits::SudokuBitBoard ExpectedColumn = BoardBits::BitColumn(7);
-			BoardBits::SudokuBitBoard ExpectedCell = BoardBits::BitCell(5);
+			BoardBits::SudokuBitBoard ExpectedBlock = BoardBits::BitBlock(5);
 			assert(neighbourBitBoards[0] == ExpectedRow);
 			assert(neighbourBitBoards[1] == ExpectedColumn);
-			assert(neighbourBitBoards[2] == ExpectedCell);
+			assert(neighbourBitBoards[2] == ExpectedBlock);
 		}
 
 		{
@@ -198,16 +198,16 @@ namespace dd
 			BitBoard neighbours = BoardBits::NeighboursForNodeCombined(NodeId);
 			BoardBits::SudokuBitBoard ExpectedRow = BoardBits::BitRow(BoardBits::RowForNodeId(NodeId));
 			BoardBits::SudokuBitBoard ExpectedColumn = BoardBits::BitColumn(BoardBits::ColumnForNodeId(NodeId));
-			BoardBits::SudokuBitBoard ExpectedCell = BoardBits::BitCell(BoardBits::CellForNodeId(NodeId));
+			BoardBits::SudokuBitBoard ExpectedBlock = BoardBits::BitBlock(BoardBits::BlockForNodeId(NodeId));
 
 			ExpectedRow.clearBit(NodeId);
 			ExpectedColumn.clearBit(NodeId);
-			ExpectedCell.clearBit(NodeId);
+			ExpectedBlock.clearBit(NodeId);
 
 			assert((neighbours & ExpectedRow).count() == 8u);
 			assert((neighbours & ExpectedColumn).count() == 8u);
-			assert((neighbours & ExpectedCell).count() == 8u);
-			assert((neighbours & ExpectedRow & ExpectedCell).count() == 2u);
+			assert((neighbours & ExpectedBlock).count() == 8u);
+			assert((neighbours & ExpectedRow & ExpectedBlock).count() == 2u);
 			assert((neighbours & ExpectedRow & ExpectedColumn).count() == 0u);
 		}
 	}
@@ -252,6 +252,15 @@ namespace dd
 	void validateBitHelpers() {
 		validateStaticUtilBitBoards();
 		validateBoardAndBitBoardTransformations();
+	}
+
+	void validateBuildCandidateMask() {
+		buildValueMask(1, 3, 5);
+
+	}
+
+	void validateUtilities() {
+		validateBuildCandidateMask();
 	}
 }
 

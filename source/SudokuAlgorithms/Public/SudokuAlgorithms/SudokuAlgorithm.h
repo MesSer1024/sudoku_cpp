@@ -81,7 +81,8 @@ namespace dd
 		//		x: Basic Candidates				removeNaiveCandidates() [All solved neighbours toMask -> remove as candidates on unsolved]
 		//		0: Naked Single					removeNakedSingle() [ All unsolved nodes -> If a node only has one candidate, it can be solved]
 		//		1: Hidden Singles				removeHiddenSingle() [ All unsolved neighbours -> if this is only occurance of candidate, it can be solved]
-		//		2: Naked Pairs/Triples	
+		//		2: Naked Pairs/Triples			removeNakedPair() // [ All unsolved in dimension -> if 2 nodes only have 2 candidates and share them, all other nodes in dimension can remove those candidates]
+
 		//		3: Hidden Pairs/Triples	 
 		//		4: Naked Quads	 
 		//		5: Pointing Pairs	 
@@ -140,7 +141,7 @@ namespace dd
 			//		store the previous values for all nodes that are about to change in "result"
 			//		remove any candidates for affected nodes
 			// foreach solved node in column ...
-			// foreach solved node in cell ...
+			// foreach solved node in block ...
 
 			// might be possible to do in parallell... but job is probably too small to be useful to parallell
 			// build all possible masks and what nodes they should affect and store in "storage"
@@ -185,14 +186,14 @@ namespace dd
 				}
 			}
 			{
-				const BoardBits::BitBoards9 cells = BoardBits::AllCells();
+				const BoardBits::BitBoards9 blocks = BoardBits::AllBlocks();
 				for (uint i = 0; i < 9; ++i)
 				{
-					const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, solved & cells[i]);
+					const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, solved & blocks[i]);
 					if (solvedValues && solvedValues != Candidates::All)
 					{
 						const u16 mask = toCandidateMask(solvedValues);
-						BitBoard modifiedNodes = wouldRemoveCandidates(b.Nodes, unsolved & cells[i], mask);
+						BitBoard modifiedNodes = wouldRemoveCandidates(b.Nodes, unsolved & blocks[i], mask);
 						if (modifiedNodes.notEmpty())
 						{
 							result.storePreModification(b.Nodes, modifiedNodes);
@@ -205,9 +206,6 @@ namespace dd
 			return result.size() > 0;
 		}
 
-		// I am considering placing all different candidates in a seperate bitboard
-		// such as BitBoard getNodesWithC1(), BitBoard getNodesWithC2(), BitBoard getNodesWithC3() ...
-		// should make it possible to query status in a different way that feels efficient
 		bool removeNakedSingle(Board& b, Result& outResult)
 		{
 			BitBoard affectedNodes;
@@ -230,7 +228,6 @@ namespace dd
 
 		// [ All unsolved in dimension -> if candidate only exists in one node in dimension, it can be solved]
 		bool removeHiddenSingle(Board& b, Result& result) {
-			const BitBoard unsolved = BoardBits::bitsUnsolved(b);
 			const BoardBits::BitBoards9 candidates = buildCandidateBoards(b);
 			const BoardBits::BitBoards27 allDirections = BoardBits::AllDimensions();
 
@@ -242,7 +239,7 @@ namespace dd
 			for (uint c = 0; c < 9; ++c) {
 				for (uint i = 0; i < 27; ++i) {
 					// for all candidates , all possible directions, find unsolved with that candidate that we have not already fixed
-					const BitBoard maskedNodesWithCandidate = unsolved & allDirections[i] & candidates[c];
+					const BitBoard maskedNodesWithCandidate = allDirections[i] & candidates[c];
 					if (maskedNodesWithCandidate.count() == 1) {
 						const u32 bitPos = maskedNodesWithCandidate.firstOne();
 
@@ -272,6 +269,87 @@ namespace dd
 			}
 
 			return numAffectedNodes > 0;
+		}
+
+		struct NakedPairMatch {
+			u8 node1;
+			u8 node2;
+			u16 candidateId1;
+			u16 candidateId2;
+
+			u16 getCombinedCandidateValueMask() const { return buildValueMask(candidateId1 + 1, candidateId2 + 1); }
+		};
+
+		// [ All unsolved in dimension -> if 2 nodes only have 2 candidates and they are the same candidates, all other nodes in dimension can remove those candidates]
+		bool removeNakedPair(Board& b, Result& result) {
+			const BoardBits::BitBoards9 candidates = buildCandidateBoards(b);
+			const BoardBits::BitBoards27 allDirections = BoardBits::AllDimensions();
+			
+			NakedPairMatch matches[256];
+			u8 numMatches = 0;
+
+
+
+			for (auto&& dimension : allDirections) {
+				BoardBits::BitBoards9 potentialNodes;
+				u16 potentialCandidateId[9];
+				u8 numPotentials = 0;
+
+				// check if any candidate is shared by exacty two nodes
+				for(u8 candidateId=0; candidateId < 9; ++candidateId) {
+					const BitBoard cd = dimension & candidates[candidateId];
+					const bool ExactlyTwoNodesShareCandidate = cd.count() == 2u;
+					if (ExactlyTwoNodesShareCandidate) {
+						potentialCandidateId[numPotentials] = candidateId;
+						potentialNodes[numPotentials] = cd;
+						
+						numPotentials++;
+					}
+				}
+
+				// check if we have two candidates shared by exactly two nodes
+				if (numPotentials >= 2) {
+					for (uint i = 0; i < numPotentials; ++i) {
+						for (uint j = i + 1; j < numPotentials; ++j) {
+							const bool sharedBySameNodes = potentialNodes[i] == (potentialNodes[i] & potentialNodes[j]);
+							if (sharedBySameNodes) {
+								u8 bothNodes[4];
+								assert(potentialNodes[i].fillSetBits(bothNodes) == 2u);
+
+								matches[numMatches].node1 = bothNodes[0];
+								matches[numMatches].node2 = bothNodes[1];
+								matches[numMatches].candidateId1 = potentialCandidateId[i];
+								matches[numMatches].candidateId2 = potentialCandidateId[j];
+
+								numMatches++;
+							}
+						}
+					}
+				}
+			}
+
+			// see if any neighbours to the nodes located have any of marked candidates
+			if (numMatches > 0) {
+				for (uint i = 0; i < numMatches; ++i) {
+					const NakedPairMatch& match = matches[i];
+
+					const BitBoard sharedNeighbours = BoardBits::SharedNeighboursClearSelf(match.node1, match.node2);
+					const BitBoard affectedNodes = (candidates[match.candidateId1] | candidates[match.candidateId2]) & sharedNeighbours;
+
+					if (affectedNodes.notEmpty()) {
+						// save node-state before modification
+						result.storePreModification(b.Nodes, affectedNodes);
+
+						// modify the neighbours that have these candidates
+						const u16 combinedMask = match.getCombinedCandidateValueMask();
+						affectedNodes.foreachSetBit([&b, combinedMask](u32 bitIndex) {
+							b.Nodes[bitIndex].candidatesRemoveBySolvedMask(combinedMask);
+						});
+					}
+				}
+			}
+
+			return result.size() > 0;
 		}
 	}
 }

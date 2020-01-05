@@ -21,6 +21,18 @@ namespace dd
 		return static_cast<u16>(valueMask);
 	}
 
+	u16 buildValueMask(u32 value) {
+		return 1u << value;
+	}
+
+	template <typename T, typename ... Ts>
+	u16 buildValueMask(T arg0, T arg1, Ts ... args)
+	{
+		u16 mask = buildValueMask(arg0);
+		mask |= buildValueMask(arg1, args ...);
+		return mask;
+	}
+
 	u16 toCandidateMask(u32 valueMask)
 	{
 		return (~valueMask) & Candidates::All;
