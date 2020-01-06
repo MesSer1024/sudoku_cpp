@@ -33,6 +33,13 @@ namespace dd
 		return mask;
 	}
 
+	u16 buildValueMaskFromCandidateIds(const u16* ids, u32 count) {
+		u16 mask = 0;
+		for (uint i = 0; i < count; ++i)
+			mask |= 1u << (ids[i] + 1); // ids are zero based
+		return mask;
+	}
+
 	u16 toCandidateMask(u32 valueMask)
 	{
 		return (~valueMask) & Candidates::All;

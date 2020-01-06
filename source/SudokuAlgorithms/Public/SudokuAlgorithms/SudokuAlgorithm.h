@@ -249,9 +249,9 @@ namespace dd
 			u16 candidateIds[4]{};
 			u8 nodeIds[4]{};
 
-			u16 getCombinedCandidateValueMask() const {
-				u16 mask = buildValueMask(candidateIds[0] + 1, candidateIds[1] + 1, candidateIds[2] + 1, candidateIds[3] + 1);
-				return mask & Candidates::All;
+			u16 getCombinedCandidateValueMask(u32 depth) const {
+				u16 mask = buildValueMaskFromCandidateIds(&candidateIds[0], depth);
+				return mask;
 			}
 		};
 
@@ -369,7 +369,7 @@ namespace dd
 						p.result.storePreModification(p.b.Nodes, affectedNodes);
 
 						// modify the neighbours that have these candidates
-						const u16 combinedMask = match.getCombinedCandidateValueMask();
+						const u16 combinedMask = match.getCombinedCandidateValueMask(depth);
 						affectedNodes.foreachSetBit([&p, combinedMask](u32 bitIndex) {
 							p.b.Nodes[bitIndex].candidatesRemoveBySolvedMask(combinedMask);
 						});
