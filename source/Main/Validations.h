@@ -31,7 +31,7 @@ namespace dd
 	}
 
 	void validateBuildBoardFromLayout() {
-		BoardCollection boards = dd::GetBoards();
+		BoardCollection boards = dd::GetRawBoards();
 		u32 value = static_cast<u32>(boards.size());
 		assert(value > 0 && value < 7777777);
 

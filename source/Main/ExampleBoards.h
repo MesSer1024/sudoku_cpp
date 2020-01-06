@@ -2,6 +2,7 @@
 #include <Core/Types.h>
 #include <vector>
 #include <string>
+#include <SudokuAlgorithms/SudokuTypes.h>
 
 namespace dd
 {
@@ -10,7 +11,15 @@ namespace dd
 
 	static const SudokuBoardRaw ExampleBoardRaw = "..5.398...82.1...7.4.75.62..3.49.................23.8..91.82.6.5...6.93...894.1..";
 
-	static BoardCollection GetBoards()
+	static u32 FillBoards(Board* outBoards, BoardCollection&& rawBoards) {
+		uint i = 0;
+		for (auto&& board : rawBoards) {
+			outBoards[i++] = Board::fromString(board.c_str());
+		}
+		return i;
+	}
+
+	static BoardCollection GetRawBoards()
 	{
 		BoardCollection boards;
 		

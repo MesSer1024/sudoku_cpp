@@ -103,10 +103,13 @@ int main()
 	using namespace std;
 	using namespace dd;
 
+	Board boards[1000];
+	const u32 numBoards = FillBoards(boards, GetRawBoards());
+	
 	u32 currBoardIndex = 0;
-	auto exampleBoards = GetBoards();
-	for (SudokuBoardRaw& boardRaw : exampleBoards) {
-		Board board = Board::fromString(boardRaw.c_str());
+	
+	for (uint i = 0; i < numBoards; ++i) {
+		Board& board = boards[i];
 		Result outcome;
 
 		bool solved;
@@ -128,7 +131,9 @@ int main()
 		currBoardIndex++;
 	}
 
-	cout << "DONE!" << endl;
+	cout << "-------------------" << endl;
+	cout << "DONE!!" << endl;
+	cout << "Iterated over: " << currBoardIndex << " boards" << endl;
 	cin.get();
 	return 0;
 }

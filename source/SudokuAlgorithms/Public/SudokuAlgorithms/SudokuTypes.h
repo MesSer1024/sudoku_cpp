@@ -91,12 +91,18 @@ namespace dd
 		Node Nodes[BoardSize];
 		char raw[BoardSize];
 
-		Board operator=(const Board& other)
+		//Board clone()(const Board& other) const
+		//{
+		//	Board b;
+		//	memcpy(&b.raw[0], &other.raw[0], sizeof(char) * BoardSize);
+		//	memcpy(&b.Nodes[0], &other.Nodes[0], sizeof(Node) * BoardSize);
+		//	return b;
+		//}
+
+		void operator=(const Board& other)
 		{
-			Board b;
-			memcpy(&b.raw[0], &other.raw[0], sizeof(char) * BoardSize);
-			memcpy(&b.Nodes[0], &other.Nodes[0], sizeof(Node) * BoardSize);
-			return b;
+			memcpy(this->raw, &other.raw[0], sizeof(char) * BoardSize);
+			memcpy(this->Nodes, &other.Nodes[0], sizeof(Node) * BoardSize);
 		}
 
 		Node& begin() { return Nodes[0]; }
