@@ -12,19 +12,26 @@
 namespace dd
 {
 	bool runTechniques(Board& b, Result& result) {
-		if (techniques::removeNaiveCandidates(b, result)) {
+		SudokuContext context{ b, result,
+			BoardBits::bitsSolved(b),
+			BoardBits::bitsUnsolved(b),
+			buildCandidateBoards(b),
+			BoardBits::AllDimensions()
+		};
+
+		if (techniques::removeNaiveCandidates(context)) {
 			return true;
 		}
 
-		if (techniques::removeNakedSingle(b, result)) {
+		if (techniques::removeNakedSingle(context)) {
 			return true;
 		}
 
-		if (techniques::removeHiddenSingle(b, result)) {
+		if (techniques::removeHiddenSingle(context)) {
 			return true;
 		}
 
-		if (techniques::removeNakedPair(b, result)) {
+		if (techniques::removeNakedPair(context)) {
 			return true;
 		}
 
@@ -32,26 +39,33 @@ namespace dd
 	}
 
 	bool beginSolveBoard(Board& b, Result& result)	{
-		u32 preNumSolved = 0;
-		for (Node& n : b.Nodes)
+		const u32 Max = 1000;
+		static u8 nodesChangedInIteration[Max];
+		static u8 techniqueUsedInIteration[Max];
+
+		// do an early iteration to fill candidates and remove the known nodes (from neighbouring solved nodes)
 		{
-			if (n.isSolved())
-				preNumSolved++;
+			SudokuContext context{ b, result,
+				BoardBits::bitsSolved(b),
+				BoardBits::bitsUnsolved(b),
+				buildCandidateBoards(b),
+				BoardBits::AllDimensions()
+			};
+
+			techniques::fillAllUnsolvedWithAllCandidates(context);
+			techniques::removeNaiveCandidates(context);
 		}
 
-		techniques::fillAllUnsolvedWithAllCandidates(b);
-		techniques::removeNaiveCandidates(b, result);
-
 		int i = 0;
-		bool unsolved = true;
-		while (unsolved && i < 2000) {
+		bool iterateAgain = true;
+		while (iterateAgain && i < Max) {
 			result.reset();
 			if (runTechniques(b, result)) {
-				if(result.Technique > Techniques::NaiveCandidates)
-					printf("Made %u changes with technique %u\n", result.size(), result.Technique);
+				nodesChangedInIteration[i] = static_cast<u8>(result.size());
+				techniqueUsedInIteration[i] = static_cast<u8>(result.Technique);
 			}
 			i++;
-			unsolved = BoardBits::bitsUnsolved(b).count() != 0;
+			iterateAgain = result.size() != 0;
 		}
 
 		u32 postNumSolved = 0;
@@ -79,6 +93,7 @@ void runValidations()
 
 int main()
 {
+	const bool PerformanceRun = false;
 	const bool Validate = true;
 	const bool StopOnFirstUnsolved = false;
 
@@ -94,16 +109,22 @@ int main()
 		Board board = Board::fromString(boardRaw.c_str());
 		Result outcome;
 
-		bool solved = beginSolveBoard(board, outcome);
-		printSudokuBoard(board);
-		if (solved)
-			validateSolvedCorectly(board);
-		else
-			validateNoDuplicates(board);
-		cout << "BoardIndex: " << currBoardIndex << "\t\t" << (solved ? "solved" : "unsolved") << endl;
+		bool solved;
+		{
+			solved = beginSolveBoard(board, outcome);
+		}
+		if (!PerformanceRun)
+		{
+			printSudokuBoard(board);
+			if (solved)
+				validateSolvedCorectly(board);
+			else
+				validateNoDuplicates(board);
+			cout << "BoardIndex: " << currBoardIndex << "\t\t" << (solved ? "solved" : "unsolved") << endl;
 
-		if (StopOnFirstUnsolved && !solved)
-			break;
+			if (StopOnFirstUnsolved && !solved)
+				break;
+		}
 		currBoardIndex++;
 	}
 

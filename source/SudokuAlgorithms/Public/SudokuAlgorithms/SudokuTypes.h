@@ -302,6 +302,11 @@ namespace dd
 			this->bits[0] &= other.bits[0];
 			this->bits[1] &= other.bits[1];
 		}
+
+		constexpr void operator^=(const BitBoard& other) {
+			this->bits[0] ^= other.bits[0];
+			this->bits[1] ^= other.bits[1];
+		}
 	};
 
 	struct BoardBits
