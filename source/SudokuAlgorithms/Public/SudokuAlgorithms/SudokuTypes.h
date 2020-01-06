@@ -231,27 +231,27 @@ namespace dd
 		}
 
 		constexpr u8 fillSetBits(u8* bitArr) const {
-			u8 count = 0;
+			u8 size = 0;
 			for (auto i = 0; i < 64; ++i)
 			{
 				const u64 testBit = 1ULL << i;
 				if (bits[0] & testBit)
-					bitArr[count++] = i;
+					bitArr[size++] = i;
 			}
 			for (auto i = 0; i < 128 - BoardSize; ++i)
 			{
 				const u64 testBit = 1ULL << i;
 				if (bits[1] & testBit)
-					bitArr[count++] = 64 + i;
+					bitArr[size++] = 64 + i;
 			}
-			return count;
+			return size;
 		}
 
 		void foreachSetBit(BitAction action) const {
 			u8 bitArr[BoardSize];
-			u8 count = fillSetBits(bitArr);
+			u8 size = fillSetBits(bitArr);
 
-			for (auto i = 0; i < count; ++i)
+			for (auto i = 0; i < size; ++i)
 				action(bitArr[i]);
 		}
 
@@ -259,13 +259,13 @@ namespace dd
 			return (bits[0] | bits[1]) != 0;
 		}
 
-		u32 count() const {
+		u32 size() const {
 			u64 setBits = __popcnt64(bits[0]);
 			setBits += __popcnt64(bits[1]);
 			return static_cast<u32>(setBits);
 		}
 
-		bool operator==(const BitBoard& other)
+		bool operator==(const BitBoard& other) const
 		{
 			return other.bits[0] == this->bits[0] && other.bits[1] == this->bits[1];
 		}
@@ -418,7 +418,34 @@ namespace dd
 			return BitBoards3 { BitRow(rowId) , BitColumn(columnId), BitBlock(blockId) };
 		}
 
-		static constexpr SudokuBitBoard SharedNeighboursClearSelf(uint node1, uint node2) {
+		static SudokuBitBoard DistinctNeighboursClearSelf(const u8* nodes, u8 count) {
+			BitBoard sharedNeighbours;
+
+			u32 rows[8];
+			u32 cols[8];
+			u32 blocks[8];
+
+			for (uint i = 0; i < count; ++i) {
+				rows[i] = RowForNodeId(nodes[i]);
+				cols[i] = ColumnForNodeId(nodes[i]);
+				blocks[i] = BlockForNodeId(nodes[i]);
+			}
+
+			if (std::adjacent_find(rows, rows + count, std::not_equal_to<>()) == rows + count)
+				sharedNeighbours |= BitRow(rows[0]);
+			if (std::adjacent_find(cols, cols + count, std::not_equal_to<>()) == cols + count)
+				sharedNeighbours |= BitColumn(cols[0]);
+			if (std::adjacent_find(blocks, blocks + count, std::not_equal_to<>()) == blocks + count)
+				sharedNeighbours |= BitBlock(blocks[0]);
+
+			for (uint i = 0; i < count; ++i) {
+				sharedNeighbours.clearBit(nodes[i]);
+			}
+
+			return sharedNeighbours;
+		}
+
+		static constexpr SudokuBitBoard SharedNeighboursClearSelf(u32 node1, u32 node2) {
 			const u32 c1 = ColumnForNodeId(node1);
 			const u32 c2 = ColumnForNodeId(node2);
 			const u32 r1 = RowForNodeId(node1);

@@ -144,9 +144,9 @@ namespace dd
 			BoardBits::SudokuBitBoard column = BoardBits::BitColumn(ColumnId);
 			BoardBits::SudokuBitBoard block = BoardBits::BitBlock(blockId);
 
-			assert(row.count() == 9);
-			assert(column.count() == 9);
-			assert(block.count() == 9);
+			assert(row.size() == 9);
+			assert(column.size() == 9);
+			assert(block.size() == 9);
 			
 			for (uint i = 0; i < 9; ++i)
 			{
@@ -189,7 +189,7 @@ namespace dd
 			for (uint i = 0; i < BoardSize; ++i)
 			{
 				BitBoard neighbours = BoardBits::NeighboursForNodeCombined(i);
-				assert(neighbours.count() == 20);
+				assert(neighbours.size() == 20);
 			}
 		}
 
@@ -204,11 +204,11 @@ namespace dd
 			ExpectedColumn.clearBit(NodeId);
 			ExpectedBlock.clearBit(NodeId);
 
-			assert((neighbours & ExpectedRow).count() == 8u);
-			assert((neighbours & ExpectedColumn).count() == 8u);
-			assert((neighbours & ExpectedBlock).count() == 8u);
-			assert((neighbours & ExpectedRow & ExpectedBlock).count() == 2u);
-			assert((neighbours & ExpectedRow & ExpectedColumn).count() == 0u);
+			assert((neighbours & ExpectedRow).size() == 8u);
+			assert((neighbours & ExpectedColumn).size() == 8u);
+			assert((neighbours & ExpectedBlock).size() == 8u);
+			assert((neighbours & ExpectedRow & ExpectedBlock).size() == 2u);
+			assert((neighbours & ExpectedRow & ExpectedColumn).size() == 0u);
 		}
 	}
 
@@ -242,7 +242,7 @@ namespace dd
 
 			BoardBits::SetBitForNodePredicate hasCandidate1 = [c1Mask](const Node& n) { return n.getCandidates() == c1Mask; };
 			BoardBits::SudokuBitBoard bitsWithC1 = BoardBits::bitsPredicate(b, hasCandidate1);
-			assert(bitsWithC1.count() == 1);
+			assert(bitsWithC1.size() == 1);
 			assert(bitsWithC1.test(ModifiedNode));
 
 			b = Board::fromString(ExampleBoardRaw.c_str()); // reset
@@ -313,7 +313,7 @@ namespace dd
 			const BitBoard unsolved = BoardBits::bitsUnsolved(board);
 			BitBoard unsolvedNeighbours = BoardBits::NeighboursForNodeCombined(0) & unsolved;
 			const u16 ExpectedCandidates = Candidates::All & (~Candidates::c1);
-			const u32 numUnsolvedNeighbours = unsolvedNeighbours.count();
+			const u32 numUnsolvedNeighbours = unsolvedNeighbours.size();
 
 			assert(numUnsolvedNeighbours == 20);
 
@@ -334,7 +334,7 @@ namespace dd
 			const BitBoard unsolved = BoardBits::bitsUnsolved(board);
 			const BitBoard unsolvedNeighbours = BoardBits::NeighboursForNodeCombined(0) & unsolved;
 			const u16 ExpectedCandidates = Candidates::All & (~(Candidates::c1 | Candidates::c2));
-			const u32 numUnsolvedNeighbours = unsolvedNeighbours.count();
+			const u32 numUnsolvedNeighbours = unsolvedNeighbours.size();
 
 			assert(numUnsolvedNeighbours == 18);
 			unsolvedNeighbours.foreachSetBit([&board, ExpectedCandidates](u32 bitIndex) {
@@ -368,7 +368,7 @@ namespace dd
 
 			techniques::removeNaiveCandidates(ctx);
 			BitBoard modifiedNodes = outcome.pullDirty();
-			assert(modifiedNodes.count() == 8 + 7 + 4);
+			assert(modifiedNodes.size() == 8 + 7 + 4);
 			assert(modifiedNodes.test(0) == false);
 			assert(modifiedNodes.test(1) == false);
 		}

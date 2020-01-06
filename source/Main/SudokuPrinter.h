@@ -13,7 +13,7 @@ namespace dd
 		auto allDimensions = BoardBits::AllDimensions();
 		for (auto dimension : allDimensions) {
 			const BitBoard solvedNodes = (BoardBits::bitsSolved(b) & dimension);
-			const u32 solvedNodeCount = solvedNodes.count();
+			const u32 solvedNodeCount = solvedNodes.size();
 			const u32 solvedValues = countCandidates(buildValueMaskFromSolvedNodes(b.Nodes, solvedNodes));
 			if(solvedValues != solvedNodeCount)
 				assert(false);
@@ -21,7 +21,7 @@ namespace dd
 	}
 
 	void validateSolvedCorectly(const Board& b) {
-		assert(BoardBits::bitsUnsolved(b).count() == 0);
+		assert(BoardBits::bitsUnsolved(b).size() == 0);
 		auto rows = BoardBits::AllRows();
 		auto cols = BoardBits::AllColumns();
 		auto blocks = BoardBits::AllBlocks();
