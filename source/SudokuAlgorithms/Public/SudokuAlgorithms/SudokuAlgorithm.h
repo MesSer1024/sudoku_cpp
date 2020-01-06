@@ -195,40 +195,28 @@ namespace dd
 		bool removeHiddenSingle(SudokuContext& p) {
 			p.result.Technique = Techniques::HiddenSingle;
 
-			//const BoardBits::BitBoards9 candidates = buildCandidateBoards(b);
-			//const BoardBits::BitBoards27 allDirections = BoardBits::AllDimensions();
-			//BitBoard affectedNodes;
-
-			//for (auto&& dir : allDirections) {
-			//	for (auto&& c : candidates) {
-			//		const BitBoard candidateInDimension = dir & c;
-			//		if (candidateInDimension.count() == 1u) {
-			//			const u8 nodeId = candidateInDimension.firstOne();
-			//			affectedNodes.setBit(nodeId);
-			//		}
-			//	}
-			//}
-
 			BitBoard unhandledNodes(BitBoard::All{});
-			u8 affectedNodes[BoardSize];
 			u8 targetValue[BoardSize];
+			u8 affectedNodes[BoardSize];
 			u8 numAffectedNodes = 0;
 
-			for (uint c = 0; c < 9; ++c) {
-				for (uint i = 0; i < 27; ++i) {
-					// for all candidates , all possible directions, find unsolved with that candidate that we have not already fixed
-					const BitBoard maskedNodesWithCandidate = p.AllDimensions[i] & p.AllCandidates[c];
-					if (maskedNodesWithCandidate.count() == 1) {
-						const u32 bitPos = maskedNodesWithCandidate.firstOne();
+			{
+				for (uint c = 0; c < 9; ++c) {
+					for (uint i = 0; i < 27; ++i) {
+						// for all candidates , all possible directions, find unsolved with that candidate that we have not already fixed
+						const BitBoard maskedNodesWithCandidate = p.AllDimensions[i] & p.AllCandidates[c];
+						if (maskedNodesWithCandidate.count() == 1) {
+							const u32 bitPos = maskedNodesWithCandidate.firstOne();
 
-						if (unhandledNodes.test(bitPos))
-						{
-							unhandledNodes.clearBit(bitPos);
+							if (unhandledNodes.test(bitPos))
+							{
+								unhandledNodes.clearBit(bitPos);
 
-							affectedNodes[numAffectedNodes] = static_cast<u8>(bitPos);
-							targetValue[numAffectedNodes] = static_cast<u8>(c + 1);
+								affectedNodes[numAffectedNodes] = static_cast<u8>(bitPos);
+								targetValue[numAffectedNodes] = static_cast<u8>(c + 1);
 
-							numAffectedNodes++;
+								numAffectedNodes++;
+							}
 						}
 					}
 				}
