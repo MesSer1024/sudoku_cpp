@@ -231,25 +231,24 @@ namespace dd
 		}
 
 		constexpr inline u8 fillSetBits(u8* __restrict bitArr) const {
-			u8* begin = bitArr;
-			u8 *dst = bitArr;
-			u64 x = bits[0];
-			for (unsigned char i = 0; i < 64; i++)
-			{
-				*dst = i;
-				dst += x & 1;
-				x >>= 1;
+			u8* dest = bitArr;
+
+			u64 word1 = bits[0];
+			u64 word2 = bits[1];
+
+			for (u8 i = 0u; word1 != 0u; ++i) {
+				*dest = i;
+				dest += word1 & u64(1u);
+				word1 >>= 1u;
 			}
 
-			x = bits[1];
-			for (unsigned char i = 0; i < (BoardSize - 64); i++)
-			{
-				*dst = 64 + i;
-				dst += x & 1;
-				x >>= 1;
+			for (u8 i = 64; word2 != 0u; ++i) {
+				*dest = i;
+				dest += word2 & u64(1u);
+				word2 >>= 1u;
 			}
 
-			return static_cast<u8>(dst - begin);
+			return static_cast<u8>(dest - bitArr);
 		}
 
 		void foreachSetBit(BitAction action) const {
