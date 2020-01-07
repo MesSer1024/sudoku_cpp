@@ -230,29 +230,35 @@ namespace dd
 			return static_cast<u8>(value);
 		}
 
-		constexpr u8 fillSetBits(u8* bitArr) const {
-			u8 size = 0;
-			for (auto i = 0; i < 64; ++i)
+		constexpr inline u8 fillSetBits(u8* __restrict bitArr) const {
+			u8* begin = bitArr;
+			u8 *dst = bitArr;
+			u64 x = bits[0];
+			for (unsigned char i = 0; i < 64; i++)
 			{
-				const u64 testBit = 1ULL << i;
-				if (bits[0] & testBit)
-					bitArr[size++] = i;
+				*dst = i;
+				dst += x & 1;
+				x >>= 1;
 			}
-			for (auto i = 0; i < 128 - BoardSize; ++i)
+
+			x = bits[1];
+			for (unsigned char i = 0; i < (BoardSize - 64); i++)
 			{
-				const u64 testBit = 1ULL << i;
-				if (bits[1] & testBit)
-					bitArr[size++] = 64 + i;
+				*dst = 64 + i;
+				dst += x & 1;
+				x >>= 1;
 			}
-			return size;
+
+			return static_cast<u8>(dst - begin);
 		}
 
 		void foreachSetBit(BitAction action) const {
-			u8 bitArr[BoardSize];
-			u8 size = fillSetBits(bitArr);
+			u8 bitArr[BoardSize+1]; // need one extra for overwrite protection
 
-			for (auto i = 0; i < size; ++i)
+			const u8 end = fillSetBits(bitArr);
+			for (u8 i = 0; i < end; ++i) {
 				action(bitArr[i]);
+			}
 		}
 
 		bool notEmpty() const {
