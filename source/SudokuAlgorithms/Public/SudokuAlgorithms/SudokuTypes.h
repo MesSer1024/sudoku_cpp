@@ -133,6 +133,7 @@ namespace dd
 				case '.':
 				case 'x':
 				case ' ':
+				case '0':
 					break;
 				case '1':
 				case '2':
@@ -264,10 +265,10 @@ namespace dd
 			return (bits[0] | bits[1]) != 0;
 		}
 
-		u32 size() const {
-			u64 setBits = __popcnt64(bits[0]);
-			setBits += __popcnt64(bits[1]);
-			return static_cast<u32>(setBits);
+		u8 size() const {
+			u64 numSetBits = __popcnt64(bits[0]);
+			numSetBits += __popcnt64(bits[1]);
+			return static_cast<u8>(numSetBits);
 		}
 
 		bool operator==(const BitBoard& other) const

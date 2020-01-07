@@ -19,6 +19,9 @@ namespace dd
 			BoardBits::AllDimensions()
 		};
 
+		if (context.Unsolved == BitBoard{})
+			return true;
+
 		if (techniques::removeNaiveCandidates(context)) {
 			return true;
 		}
@@ -32,6 +35,10 @@ namespace dd
 		}
 
 		if (techniques::removeNakedPair(context)) {
+			return true;
+		}
+
+		if (techniques::removeNakedTriplet(context)) {
 			return true;
 		}
 
