@@ -207,7 +207,9 @@ namespace dd
 
 			return out;
 		}
+	}
 
+	namespace BoardUtils {
 		BitBoard mergeCandidateBoards(SudokuContext& p, u16 combinedMask) {
 			BitBoard merged;
 			for (uint i = 0; i < 9; ++i) {
@@ -225,31 +227,35 @@ namespace dd
 				p.b.Nodes[bitIndex].candidatesRemoveBySolvedMask(candidatesToRemove);
 			});
 		}
-	}
 
-	u16 buildValueMaskFromSolvedNodes(const Node* nodes, const BitBoard& affectedNodes)
-	{
-		u32 valueMask = 0U;
+		u16 buildValueMaskFromSolvedNodes(const Node* nodes, const BitBoard& affectedNodes)
+		{
+			u32 valueMask = 0U;
 
-		affectedNodes.foreachSetBit([&valueMask, nodes](u32 bitIndex) {
-			valueMask |= (1u << nodes[bitIndex].getValue());
-		});
+			affectedNodes.foreachSetBit([&valueMask, nodes](u32 bitIndex) {
+				valueMask |= (1u << nodes[bitIndex].getValue());
+			});
 
-		if(valueMask & 1u)
-			assert(false);
-		return static_cast<u16>(valueMask);
-	}
+			if (valueMask & 1u)
+				assert(false);
+			return static_cast<u16>(valueMask);
+		}
 
-	u16 buildValueMask(u32 value) {
-		return 1u << value;
-	}
+		BitBoard wouldRemoveCandidates(Node* nodes, const BitBoard& affectedNodes, u32 possibleCandidateMask) {
+			BitBoard modifiedNodes;
+			affectedNodes.foreachSetBit([possibleCandidateMask, nodes, &modifiedNodes](u32 bitIndex) {
+				u16 currCandidates = nodes[bitIndex].getCandidates();
+				if ((possibleCandidateMask & currCandidates) != currCandidates)
+					modifiedNodes.setBit(bitIndex);
+			});
+			return modifiedNodes;
+		}
 
-	template <typename T, typename ... Ts>
-	u16 buildValueMask(T arg0, T arg1, Ts ... args)
-	{
-		u16 mask = buildValueMask(arg0);
-		mask |= buildValueMask(arg1, args ...);
-		return mask;
+		void removeCandidatesForNodes(Node* nodes, const BitBoard& affectedNodes, u32 savedCandidates) {
+			affectedNodes.foreachSetBit([savedCandidates, nodes](u32 bitIndex) {
+				nodes[bitIndex].candidatesToKeep(static_cast<u16>(savedCandidates));
+			});
+		}
 	}
 
 	u16 buildValueMaskFromCandidateIds(const u16* ids, u32 count) {
@@ -289,19 +295,5 @@ namespace dd
 		return 0;
 	}
 
-	BitBoard wouldRemoveCandidates(Node* nodes, const BitBoard& affectedNodes, u32 possibleCandidateMask) {
-		BitBoard modifiedNodes;
-		affectedNodes.foreachSetBit([possibleCandidateMask, nodes, &modifiedNodes](u32 bitIndex) {
-			u16 currCandidates = nodes[bitIndex].getCandidates();
-			if ((possibleCandidateMask & currCandidates) != currCandidates)
-				modifiedNodes.setBit(bitIndex);
-		});
-		return modifiedNodes;
-	}
-
-	void removeCandidatesForNodes(Node* nodes, const BitBoard& affectedNodes, u32 savedCandidates) {
-		affectedNodes.foreachSetBit([savedCandidates, nodes](u32 bitIndex) {
-			nodes[bitIndex].candidatesToKeep(static_cast<u16>(savedCandidates));
-		});
-	}
+	
 }

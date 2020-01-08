@@ -253,15 +253,6 @@ namespace dd
 		validateStaticUtilBitBoards();
 		validateBoardAndBitBoardTransformations();
 	}
-
-	void validateBuildCandidateMask() {
-		buildValueMask(1, 3, 5);
-
-	}
-
-	void validateUtilities() {
-		validateBuildCandidateMask();
-	}
 }
 
 

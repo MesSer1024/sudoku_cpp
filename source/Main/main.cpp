@@ -89,7 +89,6 @@ void runValidations()
 	using namespace dd;
 
 	validateCandidates();
-	validateUtilities();
 	validateBuildBoardFromLayout();
 	validateBitHelpers();
 

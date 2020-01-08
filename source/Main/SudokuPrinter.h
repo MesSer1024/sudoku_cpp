@@ -19,7 +19,7 @@ namespace dd
 		for (auto dimension : allDimensions) {
 			const BitBoard solvedNodes = (BoardBits::bitsSolved(b) & dimension);
 			const u32 solvedNodeCount = solvedNodes.countSetBits();
-			const u32 solvedValues = countCandidates(buildValueMaskFromSolvedNodes(b.Nodes, solvedNodes));
+			const u32 solvedValues = countCandidates(BoardUtils::buildValueMaskFromSolvedNodes(b.Nodes, solvedNodes));
 			if(solvedValues != solvedNodeCount)
 				assert(false);
 		}
@@ -32,17 +32,17 @@ namespace dd
 		auto blocks = BoardBits::AllBlocks();
 
 		for (auto dimension : rows) {
-			const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, dimension);
+			const u32 solvedValues = BoardUtils::buildValueMaskFromSolvedNodes(b.Nodes, dimension);
 			assert(solvedValues == Candidates::All);
 		}
 		
 		for (auto dimension : cols) {
-			const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, dimension);
+			const u32 solvedValues = BoardUtils::buildValueMaskFromSolvedNodes(b.Nodes, dimension);
 			assert(solvedValues == Candidates::All);
 		}
 		
 		for (auto dimension : blocks) {
-			const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, dimension);
+			const u32 solvedValues = BoardUtils::buildValueMaskFromSolvedNodes(b.Nodes, dimension);
 			assert(solvedValues == Candidates::All);
 		}
 	}

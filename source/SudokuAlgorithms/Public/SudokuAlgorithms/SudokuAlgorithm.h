@@ -86,14 +86,14 @@ namespace dd
 			p.result.Technique = Techniques::NaiveCandidates;
 
 			for (auto&& board : p.AllDimensions) {
-				const u16 mask = toCandidateMask(buildValueMaskFromSolvedNodes(p.b.Nodes, p.Solved & board));
+				const u16 mask = toCandidateMask(BoardUtils::buildValueMaskFromSolvedNodes(p.b.Nodes, p.Solved & board));
 				if (mask && mask != Candidates::All) {
-					BitBoard modifiedNodes = wouldRemoveCandidates(p.b.Nodes, p.Unsolved & board, mask);
+					BitBoard modifiedNodes = BoardUtils::wouldRemoveCandidates(p.b.Nodes, p.Unsolved & board, mask);
 					if (modifiedNodes.notEmpty())
 					{
 						p.result.storePreModification(p.b.Nodes, modifiedNodes);
 
-						removeCandidatesForNodes(p.b.Nodes, modifiedNodes, mask);
+						BoardUtils::removeCandidatesForNodes(p.b.Nodes, modifiedNodes, mask);
 					}
 				}
 			}
@@ -382,12 +382,12 @@ namespace dd
 					const NakedMatch& match = matches[i];
 
 					const BitBoard sharedNeighbours = BoardBits::DistinctNeighboursClearSelf(match.nodeIds, depth);
-					const BitBoard nodesWithMaskedCandidates = BoardBits::mergeCandidateBoards(p, match.combinedMask);
+					const BitBoard nodesWithMaskedCandidates = BoardUtils::mergeCandidateBoards(p, match.combinedMask);
 					const BitBoard affectedNodes = nodesWithMaskedCandidates & sharedNeighbours;
 
 					if (affectedNodes.notEmpty()) {
 						p.result.storePreModification(p.b.Nodes, affectedNodes);
-						BoardBits::removeCandidates(p, match.combinedMask, affectedNodes);
+						BoardUtils::removeCandidates(p, match.combinedMask, affectedNodes);
 					}
 				}
 			}
@@ -411,12 +411,12 @@ namespace dd
 					const NakedMatch& match = matches[i];
 
 					const BitBoard sharedNeighbours = BoardBits::DistinctNeighboursClearSelf(match.nodeIds, depth);
-					const BitBoard nodesWithMaskedCandidates = BoardBits::mergeCandidateBoards(p, match.combinedMask);
+					const BitBoard nodesWithMaskedCandidates = BoardUtils::mergeCandidateBoards(p, match.combinedMask);
 					const BitBoard affectedNodes = nodesWithMaskedCandidates & sharedNeighbours;
 
 					if (affectedNodes.notEmpty()) {
 						p.result.storePreModification(p.b.Nodes, affectedNodes);
-						BoardBits::removeCandidates(p, match.combinedMask, affectedNodes);
+						BoardUtils::removeCandidates(p, match.combinedMask, affectedNodes);
 					}
 				}
 			}
