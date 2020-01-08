@@ -377,7 +377,7 @@ namespace dd
 			return Changes[idx];
 		}
 
-		uint countSetBits() {
+		uint size() {
 			return static_cast<uint>(Changes.size());
 		}
 

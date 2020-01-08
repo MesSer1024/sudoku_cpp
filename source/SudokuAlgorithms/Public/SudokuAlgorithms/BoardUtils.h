@@ -210,7 +210,15 @@ namespace dd
 	}
 
 	namespace BoardUtils {
-		BitBoard mergeCandidateBoards(SudokuContext& p, u16 combinedMask) {
+		u16 mergeCandidateMasks(const SudokuContext& p, u8* nodeIds, u8 count) {
+			u16 mask = 0;
+			for (uint i = 0; i < count; ++i) {
+				mask |= p.b.Nodes[nodeIds[i]].getCandidates();
+			}
+			return mask;
+		}
+
+		BitBoard mergeCandidateBoards(const SudokuContext& p, u16 combinedMask) {
 			BitBoard merged;
 			for (uint i = 0; i < 9; ++i) {
 				u16 c = 1 << (i + 1);
@@ -236,8 +244,6 @@ namespace dd
 				valueMask |= (1u << nodes[bitIndex].getValue());
 			});
 
-			if (valueMask & 1u)
-				assert(false);
 			return static_cast<u16>(valueMask);
 		}
 
@@ -255,6 +261,18 @@ namespace dd
 			affectedNodes.foreachSetBit([savedCandidates, nodes](u32 bitIndex) {
 				nodes[bitIndex].candidatesToKeep(static_cast<u16>(savedCandidates));
 			});
+		}
+
+		BitBoard boardWithCandidateCount(const SudokuContext& p, int maxCandidates, int minCandidates = 2) {
+			BitBoard potentials;
+			for (uint i = 0; i < BoardSize; ++i) {
+				Node n = p.b.Nodes[i];
+				const u8 numCandidates = countCandidates(n.getCandidates());
+				if (numCandidates >= minCandidates && numCandidates <= maxCandidates) {
+					potentials.setBit(i);
+				}
+			}
+			return potentials;
 		}
 	}
 

@@ -67,11 +67,11 @@ namespace dd
 #endif
 			result.reset();
 			if (runTechniques(b, result)) {
-				g_nodesChangedInIteration[g_numIterations] = static_cast<u8>(result.countSetBits());
+				g_nodesChangedInIteration[g_numIterations] = static_cast<u8>(result.size());
 				g_techniqueUsedInIteration[g_numIterations] = result.Technique;
 			}
 			g_numIterations++;
-			iterateAgain = result.countSetBits() != 0;
+			iterateAgain = result.size() != 0;
 		}
 
 		u32 postNumSolved = 0;
@@ -98,7 +98,7 @@ void runValidations()
 
 int main()
 {
-	const bool PerformanceRun = false;
+	const bool PerformanceRun = true;
 	const bool Validate = true;
 	const bool StopOnFirstUnsolved = false;
 

@@ -85,10 +85,10 @@ namespace dd
 		{
 			p.result.Technique = Techniques::NaiveCandidates;
 
-			for (auto&& board : p.AllDimensions) {
-				const u16 mask = toCandidateMask(BoardUtils::buildValueMaskFromSolvedNodes(p.b.Nodes, p.Solved & board));
+			for (auto&& dimension : p.AllDimensions) {
+				const u16 mask = toCandidateMask(BoardUtils::buildValueMaskFromSolvedNodes(p.b.Nodes, p.Solved & dimension));
 				if (mask && mask != Candidates::All) {
-					BitBoard modifiedNodes = BoardUtils::wouldRemoveCandidates(p.b.Nodes, p.Unsolved & board, mask);
+					BitBoard modifiedNodes = BoardUtils::wouldRemoveCandidates(p.b.Nodes, p.Unsolved & dimension, mask);
 					if (modifiedNodes.notEmpty())
 					{
 						p.result.storePreModification(p.b.Nodes, modifiedNodes);
@@ -98,7 +98,7 @@ namespace dd
 				}
 			}
 
-			return p.result.countSetBits() > 0;
+			return p.result.size() > 0;
 		}
 
 		bool removeNakedSingle(SudokuContext& p)
@@ -123,7 +123,7 @@ namespace dd
 				});
 			}
 
-			return p.result.countSetBits() > 0;
+			return p.result.size() > 0;
 		}
 
 		// [ All unsolved in dimension -> if candidate only exists in one node in dimension, it can be solved]
@@ -183,8 +183,21 @@ namespace dd
 		};
 
 		struct NakedMatch {
+			NakedMatch() = default;
+
+			NakedMatch(u8* nodes, u8 count, u16 mask) {
+				for (uint i = 0; i < 4; ++i)
+					nodeIds[i] = i < count ? nodes[i] : 0;
+				combinedMask = mask;
+			}
 			u16 nodeIds[4]{};
 			u16 combinedMask{0};
+
+			bool operator==(const NakedMatch& other) const {
+				bool nodeSame = (memcmp(nodeIds, other.nodeIds, 4) == 0);
+				return nodeSame && combinedMask == other.combinedMask;
+					
+			}
 		};
 
 		class PermutationSolver {
@@ -305,7 +318,47 @@ namespace dd
 		//	return numMatches;
 		//}
 
-		uint gatherNakedCandidates(NakedMatch* matches, const SudokuContext& p, u8 depth) {
+		struct NodePermutationGenerator {
+			const u8 MaxDepth = 4;
+
+			explicit NodePermutationGenerator(const SudokuContext& p, BitBoard board, u8 depth)
+				: _p(p)
+				, _board(board)
+				, _depth(depth)
+			{
+				assert(depth <= MaxDepth);
+			}
+
+			using NodeAction = std::function<void(u8* nodeIndices)>;
+
+			void foreachDepthFilteredComboInDimension(NodeAction action) {
+				if (_board.notEmpty() == false)
+					return;
+
+				for (auto&& dimension : _p.AllDimensions) {
+					const BitBoard db = dimension & _board;
+					if (db.countSetBits() < _depth)
+						continue;
+
+					// given that we can have 6 nodes and looking for pair, need to generate all combinations of pairs given {1,2,3,4,5,6} --> {1,2}, {1,3} ...
+					std::vector<u8> nodeIndexes(BoardSize);
+					const u8 numSetBits = db.fillSetBits(nodeIndexes.data());
+
+					auto begin = nodeIndexes.begin();
+					for_each_combination(begin, begin + _depth, begin + numSetBits, [&](auto a, auto b) -> bool {
+						action(&*a);
+						return false;
+					});
+				}
+			}
+
+		private:
+			const SudokuContext& _p;
+			BitBoard _board;
+			u8 _depth;
+		};
+
+		uint gatherNakedPotentials(NakedMatch* matches, const SudokuContext& p, u8 depth) {
 			// [candidates on node] naked implies that a NODE is limited to a known amount of candidates and hence, combining those naked nodes can remove candidate for other nodes
 			// [candidates in dimension] hidden implies that a DIMENSION lacks CANDIDATE, and only a few nodes can have that value, if 2 candidate can only exist in 2 nodes, those values MUST be in those nodes
 
@@ -318,110 +371,56 @@ namespace dd
 			//				check if any other node in "dimension" has any of "combined_candidates", if so technique was successful and that candidate can be removed from neighbour
 			// -----------------------------------------
 
-			BitBoard potentialNodes;
-			u8 numMatches = 0;
+			BitBoard allNakedNodes = BoardUtils::boardWithCandidateCount(p, depth);
+			NodePermutationGenerator combo(p, allNakedNodes, depth);
 
-			for (uint i = 0; i < BoardSize; ++i) {
-				Node n = p.b.Nodes[i];
-				const u8 numCandidates = countCandidates(n.getCandidates());
-				if (numCandidates >= 2 && numCandidates <= depth) {
-					potentialNodes.setBit(i);
+			uint numMatches = 0;
+			combo.foreachDepthFilteredComboInDimension([&numMatches, matches, &p, depth](u8* nodeIds) {
+				const u16 sharedCandidateMask = BoardUtils::mergeCandidateMasks(p, nodeIds, depth);
+				if (countCandidates(sharedCandidateMask) <= depth) {
+					matches[numMatches++] = NakedMatch(nodeIds, depth, sharedCandidateMask);
 				}
-			}
-
-			if (potentialNodes.notEmpty()) {
-				for (auto&& dimension : p.AllDimensions) {
-					const BitBoard markedNodes = dimension & potentialNodes;
-					const u8 numMarkedNodes = markedNodes.countSetBits();
-					if (numMarkedNodes >= depth) {
-						// combine candidates for these nodes and see if amount of candidates == depth
-						std::vector<u8> bitArr(10);
-						markedNodes.fillSetBits(bitArr.data());
-
-						auto begin = bitArr.begin();
-						for_each_combination(begin, begin + depth, begin + numMarkedNodes, [&](auto it, auto endIt) -> bool {
-							u16 combinedMask = 0;
-							const auto begin = it;
-							while (it != endIt) {
-								combinedMask |= p.b.Nodes[*it].getCandidates();
-								it++;
-							}
-
-							const u8 numCombinedCandidates = countCandidates(combinedMask);
-							if (numCombinedCandidates == depth) {
-								for (uint i = 0; i < depth; ++i) {
-									matches[numMatches].nodeIds[i] = *(begin + i);
-								}
-								matches[numMatches].combinedMask = combinedMask;
-
-								numMatches++;
-							}
-
-							return false;
-						});
-					}
-				}
-			}
-
+			});
 			return numMatches;
 		}
 
 		// [ All unsolved in dimension -> if 2 nodes only have 2 candidates and they are the same candidates, all other nodes in dimension can remove those candidates]
-		bool removeNakedPair(SudokuContext& p) {
-			p.result.Technique = Techniques::NakedPair;
-
-			const u8 depth = 2;
+		bool removeNakedCandidatesInternal(SudokuContext& p, u8 depth) {
 			NakedMatch matches[256];
 
-			u32 numMatches = gatherNakedCandidates(matches, p, depth);
-			assert(numMatches < 256);
+			u32 numPotentials = gatherNakedPotentials(matches, p, depth);
+			assert(numPotentials < 256);
 
 			// see if any neighbours to the nodes located have any of marked candidates
-			if (numMatches > 0) {
-				for (uint i = 0; i < numMatches; ++i) {
-					const NakedMatch& match = matches[i];
+			for (uint i = 0; i < numPotentials; ++i) {
+				const NakedMatch& match = matches[i];
 
-					const BitBoard sharedNeighbours = BoardBits::DistinctNeighboursClearSelf(match.nodeIds, depth);
-					const BitBoard nodesWithMaskedCandidates = BoardUtils::mergeCandidateBoards(p, match.combinedMask);
-					const BitBoard affectedNodes = nodesWithMaskedCandidates & sharedNeighbours;
+				const BitBoard sharedNeighbours = BoardBits::DistinctNeighboursClearSelf(match.nodeIds, depth);
+				const BitBoard nodesWithMaskedCandidates = BoardUtils::mergeCandidateBoards(p, match.combinedMask);
+				const BitBoard affectedNodes = nodesWithMaskedCandidates & sharedNeighbours;
 
-					if (affectedNodes.notEmpty()) {
-						p.result.storePreModification(p.b.Nodes, affectedNodes);
-						BoardUtils::removeCandidates(p, match.combinedMask, affectedNodes);
-					}
+				if (affectedNodes.notEmpty()) {
+					p.result.storePreModification(p.b.Nodes, affectedNodes);
+
+					BoardUtils::removeCandidates(p, match.combinedMask, affectedNodes);
 				}
 			}
 
-			return p.result.countSetBits() > 0;
+			return p.result.size() > 0;
 		}
 
-		// [ All unsolved in dimension -> if 3 nodes exist that have a max of 3 candidates and they combine the same candidates {1,2} {1,3} {1,2,3} all other nodes in dimension cannot have these candidates]
+		bool removeNakedPair(SudokuContext& p) {
+			p.result.Technique = Techniques::NakedPair;
+			const u8 depth = 2;
+
+			return removeNakedCandidatesInternal(p, depth);
+		}
+
 		bool removeNakedTriplet(SudokuContext& p) {
 			p.result.Technique = Techniques::NakedTriplet;
-
 			const u8 depth = 3;
-			NakedMatch matches[256];
 
-			u32 numMatches = gatherNakedCandidates(matches, p, depth);
-			assert(numMatches < 256);
-
-			// see if any neighbours to the nodes located have any of marked candidates
-			if (numMatches > 0) {
-				for (uint i = 0; i < numMatches; ++i) {
-					const NakedMatch& match = matches[i];
-
-					const BitBoard sharedNeighbours = BoardBits::DistinctNeighboursClearSelf(match.nodeIds, depth);
-					const BitBoard nodesWithMaskedCandidates = BoardUtils::mergeCandidateBoards(p, match.combinedMask);
-					const BitBoard affectedNodes = nodesWithMaskedCandidates & sharedNeighbours;
-
-					if (affectedNodes.notEmpty()) {
-						p.result.storePreModification(p.b.Nodes, affectedNodes);
-						BoardUtils::removeCandidates(p, match.combinedMask, affectedNodes);
-					}
-				}
-			}
-
-			return p.result.countSetBits() > 0;
+			return removeNakedCandidatesInternal(p, depth);
 		}
 	}
 }

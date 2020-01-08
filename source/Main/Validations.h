@@ -343,7 +343,7 @@ namespace dd
 			techniques::fillAllUnsolvedWithAllCandidates(ctx);
 			techniques::removeNaiveCandidates(ctx);
 
-			const u32 numModifiedNodes = outcome.countSetBits();
+			const u32 numModifiedNodes = outcome.size();
 			assert(numModifiedNodes == 7 + 8 + 8 + 2);
 		}
 		{
