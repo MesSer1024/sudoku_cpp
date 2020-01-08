@@ -11,13 +11,19 @@
 
 namespace dd
 {
-	bool runTechniques(Board& b, Result& result) {
-		SudokuContext context{ b, result,
+	SudokuContext buildContext(Board& b, Result& r) {
+		return SudokuContext{
+			b,
+			r,
 			BoardBits::bitsSolved(b),
 			BoardBits::bitsUnsolved(b),
-			buildCandidateBoards(b),
+			BoardBits::buildCandidateBoards(b),
 			BoardBits::AllDimensions()
 		};
+	}
+
+	bool runTechniques(Board& b, Result& result) {
+		SudokuContext context = buildContext(b, result);
 
 		if (context.Unsolved == BitBoard{})
 			return true;
@@ -46,33 +52,26 @@ namespace dd
 	}
 
 	bool beginSolveBoard(Board& b, Result& result)	{
-		const u32 Max = 1000;
-		static u8 nodesChangedInIteration[Max];
-		static u8 techniqueUsedInIteration[Max];
-
 		// do an early iteration to fill candidates and remove the known nodes (from neighbouring solved nodes)
 		{
-			SudokuContext context{ b, result,
-				BoardBits::bitsSolved(b),
-				BoardBits::bitsUnsolved(b),
-				buildCandidateBoards(b),
-				BoardBits::AllDimensions()
-			};
-
+			SudokuContext context = buildContext(b, result);
 			techniques::fillAllUnsolvedWithAllCandidates(context);
 			techniques::removeNaiveCandidates(context);
 		}
 
-		int i = 0;
+		g_numIterations = 0;
 		bool iterateAgain = true;
-		while (iterateAgain && i < Max) {
+		while (iterateAgain && g_numIterations < MaxIterations) {
+#ifdef DD_DEBUG
+			b.updateDebugPretty();
+#endif
 			result.reset();
 			if (runTechniques(b, result)) {
-				nodesChangedInIteration[i] = static_cast<u8>(result.size());
-				techniqueUsedInIteration[i] = static_cast<u8>(result.Technique);
+				g_nodesChangedInIteration[g_numIterations] = static_cast<u8>(result.countSetBits());
+				g_techniqueUsedInIteration[g_numIterations] = result.Technique;
 			}
-			i++;
-			iterateAgain = result.size() != 0;
+			g_numIterations++;
+			iterateAgain = result.countSetBits() != 0;
 		}
 
 		u32 postNumSolved = 0;
@@ -113,9 +112,9 @@ int main()
 	Board boards[1000];
 	const u32 numBoards = FillBoards(boards, GetRawBoards());
 	
-	u32 currBoardIndex = 0;
+	u32 i = 0;
 	
-	for (uint i = 0; i < numBoards; ++i) {
+	for (; i < numBoards; ++i) {
 		Board& board = boards[i];
 		Result outcome;
 
@@ -125,22 +124,22 @@ int main()
 		}
 		if (!PerformanceRun)
 		{
+			printCandidateOutput(Techniques::NakedPair);
 			printSudokuBoard(board);
 			if (solved)
 				validateSolvedCorectly(board);
 			else
 				validateNoDuplicates(board);
-			cout << "BoardIndex: " << currBoardIndex << "\t\t" << (solved ? "solved" : "unsolved") << endl;
+			cout << "BoardIndex: " << i << "\t\t" << (solved ? "solved" : "unsolved") << endl;
 
 			if (StopOnFirstUnsolved && !solved)
 				break;
 		}
-		currBoardIndex++;
 	}
 
 	cout << "-------------------" << endl;
 	cout << "DONE!!" << endl;
-	cout << "Iterated over: " << currBoardIndex << " boards" << endl;
+	cout << "Iterated over: " << i << " boards" << endl;
 	cin.get();
 	return 0;
 }

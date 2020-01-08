@@ -52,7 +52,7 @@ namespace dd
 
 		void solve(u32 value) { bits.all = 0; bits.value = value; bits.solved = 1u; }
 
-		void candidatesSet(ValueType candidateMask) { bits.candidates = candidateMask; }
+		void candidatesSet(ValueType combinedMask) { bits.candidates = combinedMask; }
 		void candidatesRemoveSingle(ValueType candidate) { 
 			ValueType mask = ~(1 << candidate);
 			bits.candidates &= mask; 
@@ -69,6 +69,7 @@ namespace dd
 		bool notEmpty() const { return bits.all == 0; }
 		bool isSolved() const { return bits.solved; }
 		ValueType getCandidates() const { return bits.candidates; }
+
 		ValueType getValue() const { return bits.value; }
 
 	private:
@@ -88,16 +89,42 @@ namespace dd
 
 	struct Board
 	{
+		static constexpr u8 MaxPrettyChars = 142;
 		Node Nodes[BoardSize];
 		char raw[BoardSize];
+		char pretty[MaxPrettyChars];
 
-		//Board clone()(const Board& other) const
-		//{
-		//	Board b;
-		//	memcpy(&b.raw[0], &other.raw[0], sizeof(char) * BoardSize);
-		//	memcpy(&b.Nodes[0], &other.Nodes[0], sizeof(Node) * BoardSize);
-		//	return b;
-		//}
+		void updateDebugPretty() {
+			auto nodeToChar = [](Node& n) -> char {
+				if (n.isSolved()) {
+					return '0' + n.getValue();
+				}
+				else {
+					return '.';
+				}
+			};
+
+			uint p = 0;
+			for (uint i = 0; i < BoardSize; ++i, ++p) {
+				if (i % 27 == 0) {
+					if (i != 0) {
+						pretty[p++] = '|';
+						pretty[p++] = '\n';
+						for (uint j = 0; j < 12; ++j) {
+							pretty[p++] = '-';
+						}
+						pretty[p++] = '\n';
+					}
+				} else if (i % 9 == 0) {
+					pretty[p++] = '|';
+					pretty[p++] = '\n';
+				} else if (i % 3 == 0)
+					pretty[p++] = '|';
+				pretty[p] = nodeToChar(Nodes[i]);
+			}
+			pretty[p] = '|';
+			assert(p < MaxPrettyChars);
+		}
 
 		void operator=(const Board& other)
 		{
@@ -162,15 +189,6 @@ namespace dd
 		}
 	};
 
-	constexpr u16 topLeftFromblockId(uint blockId)
-	{
-		u32 rOffset = (blockId / 3);
-		u32 cOffset = (blockId % 3);
-		return
-			static_cast<u16>(27 * rOffset +
-			3 * cOffset);
-	}
-
 	struct BitBoard
 	{
 	private:
@@ -182,7 +200,7 @@ namespace dd
 		struct None {};
 		struct All {};
 		constexpr explicit BitBoard(None) : bits{} {}
-		constexpr explicit BitBoard(All) : bits{LowerMask, UpperMask} {}
+		constexpr explicit BitBoard(All) : bits{ LowerMask, UpperMask } {}
 		constexpr BitBoard() : BitBoard(None{}) {}
 		constexpr BitBoard(u64 lower, u64 upper) : bits{ lower, upper } {}
 
@@ -193,7 +211,7 @@ namespace dd
 				clearBit(bitIndex);
 		}
 
-		void setBit(uint bitIndex) { 
+		void setBit(uint bitIndex) {
 #ifdef VALIDATE_BIT_BOUNDS
 			assert(bitIndex < BoardSize);
 #endif
@@ -253,7 +271,7 @@ namespace dd
 		}
 
 		void foreachSetBit(BitAction action) const {
-			u8 bitArr[BoardSize+1]; // need one extra for overwrite protection
+			u8 bitArr[BoardSize + 1]; // need one extra for overwrite protection
 
 			const u8 end = fillSetBits(bitArr);
 			for (u8 i = 0; i < end; ++i) {
@@ -265,7 +283,7 @@ namespace dd
 			return (bits[0] | bits[1]) != 0;
 		}
 
-		u8 size() const {
+		u8 countSetBits() const {
 			u64 numSetBits = __popcnt64(bits[0]);
 			numSetBits += __popcnt64(bits[1]);
 			return static_cast<u8>(numSetBits);
@@ -321,186 +339,86 @@ namespace dd
 		}
 	};
 
-	struct BoardBits
+	struct Change
 	{
+		u8 index;
+		Node prev;
+	};
+
+	enum class Techniques {
+		None = 0,
+		NaiveCandidates,
+		NakedSingle,
+		HiddenSingle,
+		NakedPair,
+		NakedTriplet,
+	};
+
+	struct Result
+	{
+		void storePreModification(const Node* nodes, const BitBoard& affectedNodes)
+		{
+			BitBoard newDirty = (affectedNodes ^ _dirty) & affectedNodes;
+			_dirty |= affectedNodes;
+
+			newDirty.foreachSetBit([nodes, &Changes = Changes](u32 bitIndex) {
+				Changes.push_back({ static_cast<u8>(bitIndex), nodes[bitIndex] });
+			});
+		}
+
+		void append(Node old, u8 id)
+		{
+			if (!_dirty.test(id))
+				Changes.push_back({ id, old });
+		}
+
+		Change fetch(uint idx)
+		{
+			return Changes[idx];
+		}
+
+		uint countSetBits() {
+			return static_cast<uint>(Changes.size());
+		}
+
+		bool operator()() {
+			return Changes.size() > 0;
+		}
+
+		BitBoard pullDirty() {
+			return _dirty;
+		}
+
+		void reset() {
+			Changes.clear();
+			_dirty = {};
+			Technique = Techniques::None;
+		}
+
+		Techniques Technique{ Techniques::None };
+	private:
+		std::vector<Change> Changes;
+		BitBoard _dirty;
+	};
+
+	namespace BoardBits {
 		using SudokuBitBoard = BitBoard;
 		using BitBoards3 = std::array<SudokuBitBoard, 3>; // for instance neighbours given a specific node
 		using BitBoards9 = std::array<SudokuBitBoard, 9>; // for instance all different rows
 		using BitBoards27 = std::array<SudokuBitBoard, 27>; // for instance all different rows
+	}
 
-		static constexpr SudokuBitBoard BitRow(uint rowId) {
-			SudokuBitBoard row{};
-			for (uint i = 0; i < 9; ++i)
-				row.setBit(i + rowId * 9);
-			return row;
-		}
+	struct SudokuContext {
+		//SudokuContext(Board& board, Result& r)
+		//	: b(board)
+		//	, result(r)
+		//{}
+		Board& b;
+		Result& result;
 
-		static constexpr SudokuBitBoard BitColumn(uint columnId) {
-			SudokuBitBoard col{};
-			for (uint i = 0; i < 9; ++i)
-				col.setBit(columnId + (i * 9));
-			return col;
-		}
-
-		static constexpr SudokuBitBoard BitBlock(uint blockId) {
-			SudokuBitBoard block{};
-			u16 top_left = topLeftFromblockId(blockId);
-			for (uint i = 0; i < 3; ++i)
-			{
-				block.setBit(top_left + i * 9 + 0);
-				block.setBit(top_left + i * 9 + 1);
-				block.setBit(top_left + i * 9 + 2);
-			}
-			return block;
-		}
-
-		//////////////////////////////////////////////////////
-
-		static constexpr BitBoards9 AllRows() {
-			BitBoards9 rows; 
-			for(uint i=0; i < 9; ++i)
-				rows[i] = BitRow(i);
-			return rows;
-		}
-
-		static constexpr BitBoards9 AllColumns() {
-			BitBoards9 columns;
-			for (uint i = 0; i < 9; ++i)
-				columns[i] = BitColumn(i);
-			return columns;
-		}
-
-		static constexpr BitBoards9 AllBlocks() {
-			BitBoards9 blocks;
-			for (uint i = 0; i < 9; ++i)
-				blocks[i] = BitBlock(i);
-			return blocks;
-		}
-
-		static constexpr BitBoards27 AllDimensions() {
-			BitBoards27 dimensions;
-			for (uint i = 0; i < 9; ++i) {
-				dimensions[i] = BitRow(i);
-				dimensions[i + 9] = BitColumn(i);
-				dimensions[i + 18] = BitBlock(i);
-			}
-			return dimensions;
-		}
-
-		static constexpr uint RowForNodeId(uint nodeId) { return nodeId / 9; }
-		static constexpr uint ColumnForNodeId(uint nodeId) { return nodeId % 9; }
-		static constexpr uint BlockForNodeId(uint nodeId) { 
-			const uint rowId = RowForNodeId(nodeId);
-			const uint columnId = ColumnForNodeId(nodeId);
-			const uint rowOffset = (rowId / 3) * 3; // only take full 3's and multiply with 3 [0..2] --> 0, [3..5] --> 3
-			const uint colOffset = columnId / 3;
-			const uint blockId = rowOffset + colOffset;
-			return blockId;
-		}
-
-		static constexpr BitBoard NeighboursForNodeCombined(uint nodeId) {
-			const uint rowId = RowForNodeId(nodeId);
-			const uint columnId = ColumnForNodeId(nodeId);
-			const uint blockId = BlockForNodeId(nodeId);
-
-			BitBoard b = BitRow(rowId) | BitColumn(columnId) | BitBlock(blockId);
-			b.clearBit(nodeId);
-			return b;
-		}
-
-		static constexpr BitBoards3 NeighboursForNodeClearSelf(uint nodeId) {
-			BitBoards3 boards = NeighboursForNode(nodeId);
-			boards[0].clearBit(nodeId);
-			boards[1].clearBit(nodeId);
-			boards[2].clearBit(nodeId);
-			return boards;
-		}
-
-		static constexpr BitBoards3 NeighboursForNode(uint nodeId) {
-			const uint rowId = RowForNodeId(nodeId);
-			const uint columnId = ColumnForNodeId(nodeId);
-			const uint blockId = BlockForNodeId(nodeId);
-
-			return BitBoards3 { BitRow(rowId) , BitColumn(columnId), BitBlock(blockId) };
-		}
-
-		static SudokuBitBoard DistinctNeighboursClearSelf(const u8* nodes, u8 count) {
-			BitBoard sharedNeighbours;
-
-			u32 rows[8];
-			u32 cols[8];
-			u32 blocks[8];
-
-			for (uint i = 0; i < count; ++i) {
-				rows[i] = RowForNodeId(nodes[i]);
-				cols[i] = ColumnForNodeId(nodes[i]);
-				blocks[i] = BlockForNodeId(nodes[i]);
-			}
-
-			if (std::adjacent_find(rows, rows + count, std::not_equal_to<>()) == rows + count)
-				sharedNeighbours |= BitRow(rows[0]);
-			if (std::adjacent_find(cols, cols + count, std::not_equal_to<>()) == cols + count)
-				sharedNeighbours |= BitColumn(cols[0]);
-			if (std::adjacent_find(blocks, blocks + count, std::not_equal_to<>()) == blocks + count)
-				sharedNeighbours |= BitBlock(blocks[0]);
-
-			for (uint i = 0; i < count; ++i) {
-				sharedNeighbours.clearBit(nodes[i]);
-			}
-
-			return sharedNeighbours;
-		}
-
-		static constexpr SudokuBitBoard SharedNeighboursClearSelf(u32 node1, u32 node2) {
-			const u32 c1 = ColumnForNodeId(node1);
-			const u32 c2 = ColumnForNodeId(node2);
-			const u32 r1 = RowForNodeId(node1);
-			const u32 r2 = RowForNodeId(node2);
-			const u32 b1 = BlockForNodeId(node1);
-			const u32 b2 = BlockForNodeId(node2);
-			
-			BitBoard sharedNeighbours;
-
-			if (c1 == c2)
-				sharedNeighbours |= BitColumn(c1);
-			if (r1 == r2)
-				sharedNeighbours |= BitRow(r1);
-			if (b1 == b2)
-				sharedNeighbours |= BitBlock(b1);
-
-			sharedNeighbours.clearBit(node1);
-			sharedNeighbours.clearBit(node2);
-			
-			return sharedNeighbours;
-		}
-
-		//////////////////////////////////////////////////////
-
-		static SudokuBitBoard bitsSolved(const Board& b)
-		{
-			SudokuBitBoard bits;
-			for (uint i = 0; i < BoardSize; ++i)
-				if (b.Nodes[i].isSolved())
-					bits.setBit(i);
-			return bits;
-		}
-
-		static SudokuBitBoard bitsUnsolved(const Board& b)
-		{
-			SudokuBitBoard bits;
-			for (uint i = 0; i < BoardSize; ++i)
-				bits.modifyBit(i, !b.Nodes[i].isSolved());
-			return bits;
-		}
-
-		using SetBitForNodePredicate = std::function<bool(const Node&)>;
-		static SudokuBitBoard bitsPredicate(const Board& b, SetBitForNodePredicate f)
-		{
-			SudokuBitBoard bits;
-			for (uint i = 0; i < BoardSize; ++i)
-				bits.modifyBit(i, f(b.Nodes[i]));
-			return bits;
-		}
+		const BitBoard Solved;
+		const BitBoard Unsolved;
+		const BoardBits::BitBoards9 AllCandidates;
+		const BoardBits::BitBoards27 AllDimensions;
 	};
-
 }

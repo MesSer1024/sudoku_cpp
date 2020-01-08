@@ -6,6 +6,11 @@
 
 namespace dd 
 {
+	constexpr u32 MaxIterations = 1000;
+	static u8 g_nodesChangedInIteration[MaxIterations];
+	static Techniques g_techniqueUsedInIteration[MaxIterations];
+	static u32 g_numIterations;
+
 	constexpr char* LineSymbol{ "-----------------\n" };
 	constexpr char* EmptyNode{ "." };
 
@@ -13,7 +18,7 @@ namespace dd
 		auto allDimensions = BoardBits::AllDimensions();
 		for (auto dimension : allDimensions) {
 			const BitBoard solvedNodes = (BoardBits::bitsSolved(b) & dimension);
-			const u32 solvedNodeCount = solvedNodes.size();
+			const u32 solvedNodeCount = solvedNodes.countSetBits();
 			const u32 solvedValues = countCandidates(buildValueMaskFromSolvedNodes(b.Nodes, solvedNodes));
 			if(solvedValues != solvedNodeCount)
 				assert(false);
@@ -21,7 +26,7 @@ namespace dd
 	}
 
 	void validateSolvedCorectly(const Board& b) {
-		assert(BoardBits::bitsUnsolved(b).size() == 0);
+		assert(BoardBits::bitsUnsolved(b).countSetBits() == 0);
 		auto rows = BoardBits::AllRows();
 		auto cols = BoardBits::AllColumns();
 		auto blocks = BoardBits::AllBlocks();
@@ -39,6 +44,13 @@ namespace dd
 		for (auto dimension : blocks) {
 			const u32 solvedValues = buildValueMaskFromSolvedNodes(b.Nodes, dimension);
 			assert(solvedValues == Candidates::All);
+		}
+	}
+
+	void printCandidateOutput(Techniques lowestPrinted) {
+		for (uint i = 0, end = g_numIterations; i < end; ++i) {
+			if(g_techniqueUsedInIteration[i] >= lowestPrinted)
+				printf("%u: Made %u changes with technique %u\n", i, g_nodesChangedInIteration[i], g_techniqueUsedInIteration[i]);
 		}
 	}
 
