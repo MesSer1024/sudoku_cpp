@@ -11,6 +11,8 @@
 
 namespace dd
 {
+
+
 	SudokuContext buildContext(Board& b, Result& r) {
 		return SudokuContext{
 			b,

@@ -74,8 +74,8 @@ namespace dd
 
 		void fillUnsolvedWithNonNaiveCandidates(SudokuContext& p)
 		{
-// #todo : should be possible to do this entire algo quicker, seems important since this happens every time
 			p.result.Technique = Techniques::None;
+			BitBoard touchedNodes;
 
 			for (auto&& dimension : p.AllDimensions) {
 				u8 nodeIds[9];
@@ -83,13 +83,20 @@ namespace dd
 
 				if (numSolved < 9) {
 					const u16 solvedValues = buildSolvedMask(p, nodeIds, numSolved);
+					const u16 candidateMask = toCandidateMask(solvedValues);
 
-					(dimension & p.Unsolved).foreachSetBit([&p, solvedValues](u32 nodeId) {
+					(dimension & p.Unsolved).foreachSetBit([&p, &touchedNodes, solvedValues, candidateMask](u32 nodeId) {
 						Node& node = p.b.Nodes[nodeId];
-						node.candidatesSet(toCandidateMask(solvedValues));
+						if (touchedNodes.test(nodeId) == false) {
+							touchedNodes.setBit(nodeId);
+							node.candidatesSet(candidateMask);
+						} else {
+							node.candidatesRemoveBySolvedMask(solvedValues);
+						}
 					});
 				}
 			}
+			p.result.storePreModification(p.b.Nodes, touchedNodes);
 		}
 
 		bool removeNaiveCandidates(SudokuContext& p)
