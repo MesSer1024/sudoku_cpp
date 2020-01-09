@@ -55,8 +55,7 @@ namespace dd
 		// do an early iteration to fill candidates and remove the known nodes (from neighbouring solved nodes)
 		{
 			SudokuContext context = buildContext(b, result);
-			techniques::fillAllUnsolvedWithAllCandidates(context);
-			techniques::removeNaiveCandidates(context);
+			techniques::fillUnsolvedWithNonNaiveCandidates(context);
 		}
 
 		g_numIterations = 0;
@@ -98,7 +97,7 @@ void runValidations()
 
 int main()
 {
-	const bool PerformanceRun = true;
+	const bool PerformanceRun = false;
 	const bool Validate = true;
 	const bool StopOnFirstUnsolved = false;
 

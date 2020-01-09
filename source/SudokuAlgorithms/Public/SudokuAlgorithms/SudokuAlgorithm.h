@@ -72,13 +72,24 @@ namespace dd
 		//"Trial and Error"	
 		//		35: Bowman's Bingo
 
-		void fillAllUnsolvedWithAllCandidates(SudokuContext& p)
+		void fillUnsolvedWithNonNaiveCandidates(SudokuContext& p)
 		{
-			BitAction applyAllCandidatesAction = [&p](u32 bitIndex) {
-				p.b.Nodes[bitIndex].candidatesSet(Candidates::All);
-			};
+// #todo : should be possible to do this entire algo quicker, seems important since this happens every time
+			p.result.Technique = Techniques::None;
 
-			p.Unsolved.foreachSetBit(applyAllCandidatesAction);
+			for (auto&& dimension : p.AllDimensions) {
+				u8 nodeIds[9];
+				const u8 numSolved = (p.Solved & dimension).fillSetBits(nodeIds);
+
+				if (numSolved < 9) {
+					const u16 solvedValues = buildSolvedMask(p, nodeIds, numSolved);
+
+					(dimension & p.Unsolved).foreachSetBit([&p, solvedValues](u32 nodeId) {
+						Node& node = p.b.Nodes[nodeId];
+						node.candidatesSet(toCandidateMask(solvedValues));
+					});
+				}
+			}
 		}
 
 		bool removeNaiveCandidates(SudokuContext& p)
@@ -86,15 +97,20 @@ namespace dd
 			p.result.Technique = Techniques::NaiveCandidates;
 
 			for (auto&& dimension : p.AllDimensions) {
-				const u16 mask = toCandidateMask(BoardUtils::buildValueMaskFromSolvedNodes(p.b.Nodes, p.Solved & dimension));
-				if (mask && mask != Candidates::All) {
-					BitBoard modifiedNodes = BoardUtils::wouldRemoveCandidates(p.b.Nodes, p.Unsolved & dimension, mask);
-					if (modifiedNodes.notEmpty())
-					{
-						p.result.storePreModification(p.b.Nodes, modifiedNodes);
+				u8 nodeIds[9];
+				const u8 numSolved = (p.Solved & dimension).fillSetBits(nodeIds);
 
-						BoardUtils::removeCandidatesForNodes(p.b.Nodes, modifiedNodes, mask);
-					}
+				if (numSolved > 0 && numSolved < 9) {
+					const u16 solvedValues = buildSolvedMask(p, nodeIds, numSolved);
+
+					(dimension & p.Unsolved).foreachSetBit([&p, solvedValues](u32 nodeId) {
+						Node& node = p.b.Nodes[nodeId];
+						const bool haveCandidateToRemove = solvedValues & node.getCandidates();
+						if (haveCandidateToRemove) {
+							p.result.append(node, static_cast<u8>(nodeId));
+							node.candidatesRemoveBySolvedMask(solvedValues);
+						}
+					});
 				}
 			}
 

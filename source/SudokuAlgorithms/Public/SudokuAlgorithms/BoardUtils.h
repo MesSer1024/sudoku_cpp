@@ -247,16 +247,6 @@ namespace dd
 			return static_cast<u16>(valueMask);
 		}
 
-		BitBoard wouldRemoveCandidates(Node* nodes, const BitBoard& affectedNodes, u32 possibleCandidateMask) {
-			BitBoard modifiedNodes;
-			affectedNodes.foreachSetBit([possibleCandidateMask, nodes, &modifiedNodes](u32 bitIndex) {
-				u16 currCandidates = nodes[bitIndex].getCandidates();
-				if ((possibleCandidateMask & currCandidates) != currCandidates)
-					modifiedNodes.setBit(bitIndex);
-			});
-			return modifiedNodes;
-		}
-
 		void removeCandidatesForNodes(Node* nodes, const BitBoard& affectedNodes, u32 savedCandidates) {
 			affectedNodes.foreachSetBit([savedCandidates, nodes](u32 bitIndex) {
 				nodes[bitIndex].candidatesToKeep(static_cast<u16>(savedCandidates));
@@ -274,6 +264,13 @@ namespace dd
 			}
 			return potentials;
 		}
+	}
+
+	u16 buildSolvedMask(const SudokuContext& p, u8* nodeIds, u8 count) {
+		u16 merged = 0;
+		for (uint i = 0; i < count; ++i)
+			merged |= 1 << p.b.Nodes[nodeIds[i]].getValue();
+		return merged;
 	}
 
 	u16 buildValueMaskFromCandidateIds(const u16* ids, u32 count) {
