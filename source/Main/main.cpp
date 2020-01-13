@@ -50,6 +50,14 @@ namespace dd
 			return true;
 		}
 
+		if (techniques::removeHiddenPair(context)) {
+			return true;
+		}
+
+		if (techniques::removeHiddenTriplet(context)) {
+			return true;
+		}
+
 		return false;
 	}
 
@@ -99,7 +107,11 @@ void runValidations()
 
 int main()
 {
+#ifdef DD_DEBUG
 	const bool PerformanceRun = false;
+#else
+	const bool PerformanceRun = true;
+#endif
 	const bool Validate = true;
 	const bool StopOnFirstUnsolved = false;
 

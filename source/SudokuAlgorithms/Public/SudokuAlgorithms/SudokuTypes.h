@@ -352,6 +352,8 @@ namespace dd
 		HiddenSingle,
 		NakedPair,
 		NakedTriplet,
+		HiddenPair,
+		HiddenTriplet,
 	};
 
 	struct Result
@@ -409,10 +411,6 @@ namespace dd
 	}
 
 	struct SudokuContext {
-		//SudokuContext(Board& board, Result& r)
-		//	: b(board)
-		//	, result(r)
-		//{}
 		Board& b;
 		Result& result;
 

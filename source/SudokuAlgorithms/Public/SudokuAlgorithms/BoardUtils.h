@@ -253,7 +253,7 @@ namespace dd
 			});
 		}
 
-		BitBoard boardWithCandidateCount(const SudokuContext& p, int maxCandidates, int minCandidates = 2) {
+		BitBoard boardWhereCandidateCountEquals(const SudokuContext& p, int maxCandidates, int minCandidates = 2) {
 			BitBoard potentials;
 			for (uint i = 0; i < BoardSize; ++i) {
 				Node n = p.b.Nodes[i];
@@ -263,6 +263,12 @@ namespace dd
 				}
 			}
 			return potentials;
+		}
+
+		void populateCandidateCount(u8* candidateCount, const SudokuContext& p, const BitBoard& affectedNodes) {
+			for (uint i = 0; i < 9; ++i) {
+				candidateCount[i] = (affectedNodes & p.AllCandidates[i]).countSetBits();
+			}
 		}
 	}
 
