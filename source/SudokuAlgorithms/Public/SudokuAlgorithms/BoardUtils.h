@@ -279,6 +279,14 @@ namespace dd
 		return merged;
 	}
 
+	u16 buildSolvedMask(const SudokuContext& p, const BitBoard& affectedNodes) {
+		u16 merged = 0;
+		affectedNodes.foreachSetBit([&p, &merged](u32 bit) {
+			merged |= 1 << p.b.Nodes[bit].getValue();
+		});
+		return merged;
+	}
+
 	u16 buildValueMaskFromCandidateIds(const u16* ids, u32 count) {
 		u16 mask = 0;
 		for (uint i = 0; i < count; ++i)

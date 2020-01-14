@@ -354,6 +354,7 @@ namespace dd
 		NakedTriplet,
 		HiddenPair,
 		HiddenTriplet,
+		PointingPair,
 	};
 
 	struct Result

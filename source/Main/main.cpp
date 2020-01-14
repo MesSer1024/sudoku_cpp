@@ -58,6 +58,10 @@ namespace dd
 			return true;
 		}
 
+		if (techniques::pointingPair(context)) {
+			return true;
+		}
+
 		return false;
 	}
 
@@ -141,7 +145,7 @@ int main()
 			if (solved)
 				validateSolvedCorectly(board);
 			else
-				validateNoDuplicates(board);
+				validateNoDuplicates(board); 
 			cout << "BoardIndex: " << i << "\t\t" << (solved ? "solved" : "unsolved") << endl;
 
 			if (StopOnFirstUnsolved && !solved)

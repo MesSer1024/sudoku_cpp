@@ -40,16 +40,14 @@ namespace dd
 		boards.emplace_back("1.........5....1.2..25.74....5.38.1......467.7....5..9.9.....8.......9...734....."); // naked pair + ?
 
 		//advanced (not naked)
-		boards.emplace_back("3.8.2..7.....31....4......8.....8.57..3..61..5.....2.675...9............4..75..9.");
-		boards.emplace_back("7.....9......8..67..37...141..6.2....9.....7....9.8..637...41..95..3......6.....2");
-		boards.emplace_back("..219.4....5....3.......6.5..19...87.2...6...5.8........6......41.6.7..97..8...2.");
-		boards.emplace_back(".3...8.....7.13.8..6.5..314......95.6.....273.72......291..5.3..4.39.5.....7...6.");
+		boards.emplace_back("3.8.2..7.....31....4......8.....8.57..3..61..5.....2.675...9............4..75..9."); // hidden pair/triplet
+		boards.emplace_back("7.....9......8..67..37...141..6.2....9.....7....9.8..637...41..95..3......6.....2");// hidden pair/triplet
+		boards.emplace_back("..219.4....5....3.......6.5..19...87.2...6...5.8........6......41.6.7..97..8...2.");// hidden pair/triplet
+		boards.emplace_back(".3...8.....7.13.8..6.5..314......95.6.....273.72......291..5.3..4.39.5.....7...6.");// hidden pair/triplet
+		boards.emplace_back(".....1.3.231.9.....65..31..6789243..1.3.5...6...1367....936.57...6.198433........"); //Hidden triples
 
 		//pointing pairs required
-		boards.emplace_back("5..683....8..7......6.2..7....2.5....9.7..35.81.........9......43....1........82.");
-
-		//Example Boards
-		boards.emplace_back(".....1.3.231.9.....65..31..6789243..1.3.5...6...1367....936.57...6.198433........"); //Hidden triples
+		boards.emplace_back("5..683....8..7......6.2..7....2.5....9.7..35.81.........9......43....1........82."); // Pointing pairs
 		//boards.emplace_back("....3..86....2..4..9..7852.3718562949..1423754..3976182..7.3859.392.54677..9.4132"); //Naked Triple/Quads
 		//boards.emplace_back("42.9..386.6.2..7948.9.6.2517....3.259..1.26.32..5....8..4.2.5676827..439......812"); //Unique Rectangle | Also good because solver at sudokuwiki.org uses unneccessary techniques such as simple colouring & X-cycle which removes candidates but is unneccessary for solution
 		//boards.emplace_back("1.957.3...7.39..1...3.1.597.8.743...492.5.78373.289.4.317.2.4..26..3..7.95..67231"); //(Hidden Unique Rectangle - type 1)
