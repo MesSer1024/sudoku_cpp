@@ -2,15 +2,18 @@
 
 #include <algorithm>
 #include <array>
-#include <bitset>
 #include <functional>
 #include <intrin.h>
+#include <map>
 
 #include <Core/Types.h>
 #include <SudokuAlgorithms/Module.h>
 
 namespace dd
 {
+	enum class Techniques;
+	struct Result;
+
 	constexpr uint BoardSize = 81u;
 	using BitAction = std::function<void(u32 bitIndex)>;
 
@@ -345,16 +348,38 @@ namespace dd
 		Node prev;
 	};
 
-	enum class Techniques {
-		None = 0,
-		NaiveCandidates,
-		NakedSingle,
-		HiddenSingle,
-		NakedPair,
-		NakedTriplet,
-		HiddenPair,
-		HiddenTriplet,
-		PointingPair,
+	namespace BoardBits {
+		using SudokuBitBoard = BitBoard;
+		using BitBoards3 = std::array<SudokuBitBoard, 3>; // for instance neighbours given a specific node
+		using BitBoards9 = std::array<SudokuBitBoard, 9>; // for instance all different rows
+		using BitBoards27 = std::array<SudokuBitBoard, 27>; // for instance all different rows
+	}
+
+	template<typename PtrType>
+	struct Span {
+		Span(const PtrType* firstElement, u32 count)
+			: first(firstElement)
+			, last(firstElement+count)
+		{}
+
+		const PtrType* begin() const { return first; }
+		const PtrType* end() const { return last; }
+		u32 size() const { return (last - first); }
+
+	private:
+		const PtrType* first;
+		const PtrType* last;
+	};
+
+	struct SudokuContext {
+		Board& b;
+		Result& result;
+
+		const BitBoard Solved;
+		const BitBoard Unsolved;
+		const BoardBits::BitBoards9 AllCandidates;
+		const BoardBits::BitBoards27 AllDimensions;
+		Span<BitBoard> getBlocks() { return Span<BitBoard>(&AllDimensions[18], 9); }
 	};
 
 	struct Result
@@ -395,29 +420,13 @@ namespace dd
 		void reset() {
 			Changes.clear();
 			_dirty = {};
-			Technique = Techniques::None;
+			Technique = {};
 		}
 
-		Techniques Technique{ Techniques::None };
+		Techniques Technique{ };
 	private:
 		std::vector<Change> Changes;
 		BitBoard _dirty;
 	};
 
-	namespace BoardBits {
-		using SudokuBitBoard = BitBoard;
-		using BitBoards3 = std::array<SudokuBitBoard, 3>; // for instance neighbours given a specific node
-		using BitBoards9 = std::array<SudokuBitBoard, 9>; // for instance all different rows
-		using BitBoards27 = std::array<SudokuBitBoard, 27>; // for instance all different rows
-	}
-
-	struct SudokuContext {
-		Board& b;
-		Result& result;
-
-		const BitBoard Solved;
-		const BitBoard Unsolved;
-		const BoardBits::BitBoards9 AllCandidates;
-		const BoardBits::BitBoards27 AllDimensions;
-	};
 }

@@ -8,6 +8,39 @@
 
 namespace dd
 {
+	namespace BoardUtils {
+		constexpr uint RowForNodeId(uint nodeId) { return nodeId / 9; }
+		constexpr uint ColumnForNodeId(uint nodeId) { return nodeId % 9; }
+		constexpr uint BlockForNodeId(uint nodeId) {
+			const uint rowId = RowForNodeId(nodeId);
+			const uint columnId = ColumnForNodeId(nodeId);
+			const uint rowOffset = (rowId / 3) * 3; // only take full 3's and multiply with 3 [0..2] --> 0, [3..5] --> 3
+			const uint colOffset = columnId / 3;
+			const uint blockId = rowOffset + colOffset;
+			return blockId;
+		}
+
+		constexpr bool sharesRow(u8* nodeIds, u8 count) {
+			const uint ExpectedDimension = RowForNodeId(nodeIds[0]);
+			for (uint i = 1; i < count; ++i) {
+				uint dim = RowForNodeId(nodeIds[i]);
+				if (dim != ExpectedDimension)
+					return false;
+			}
+			return true;
+		}
+
+		constexpr bool sharesColumn(u8* nodeIds, u8 count) {
+			const uint ExpectedDimension = ColumnForNodeId(nodeIds[0]);
+			for (uint i = 1; i < count; ++i) {
+				uint dim = ColumnForNodeId(nodeIds[i]);
+				if (dim != ExpectedDimension)
+					return false;
+			}
+			return true;
+		}
+	}
+
 	u8 countCandidates(u16 mask) {
 		return static_cast<u8>(__popcnt16(mask));
 	}
@@ -85,29 +118,18 @@ namespace dd
 			return dimensions;
 		}
 
-		constexpr uint RowForNodeId(uint nodeId) { return nodeId / 9; }
-		constexpr uint ColumnForNodeId(uint nodeId) { return nodeId % 9; }
-		constexpr uint BlockForNodeId(uint nodeId) {
-			const uint rowId = RowForNodeId(nodeId);
-			const uint columnId = ColumnForNodeId(nodeId);
-			const uint rowOffset = (rowId / 3) * 3; // only take full 3's and multiply with 3 [0..2] --> 0, [3..5] --> 3
-			const uint colOffset = columnId / 3;
-			const uint blockId = rowOffset + colOffset;
-			return blockId;
-		}
-
 		constexpr BitBoards3 NeighboursForNode(uint nodeId) {
-			const uint rowId = RowForNodeId(nodeId);
-			const uint columnId = ColumnForNodeId(nodeId);
-			const uint blockId = BlockForNodeId(nodeId);
+			const uint rowId = BoardUtils::RowForNodeId(nodeId);
+			const uint columnId = BoardUtils::ColumnForNodeId(nodeId);
+			const uint blockId = BoardUtils::BlockForNodeId(nodeId);
 
 			return BitBoards3{ BitRow(rowId) , BitColumn(columnId), BitBlock(blockId) };
 		}
 
 		constexpr BitBoard NeighboursForNodeCombined(uint nodeId) {
-			const uint rowId = RowForNodeId(nodeId);
-			const uint columnId = ColumnForNodeId(nodeId);
-			const uint blockId = BlockForNodeId(nodeId);
+			const uint rowId = BoardUtils::RowForNodeId(nodeId);
+			const uint columnId = BoardUtils::ColumnForNodeId(nodeId);
+			const uint blockId = BoardUtils::BlockForNodeId(nodeId);
 
 			BitBoard b = BitRow(rowId) | BitColumn(columnId) | BitBlock(blockId);
 			b.clearBit(nodeId);
@@ -122,7 +144,7 @@ namespace dd
 			return boards;
 		}
 
-		SudokuBitBoard DistinctNeighboursClearSelf(const u16* nodes, u8 count) {
+		SudokuBitBoard SharedNeighborsClearSelf(const u16* nodes, u8 count) {
 			BitBoard sharedNeighbours;
 
 			u32 rows[8];
@@ -130,9 +152,9 @@ namespace dd
 			u32 blocks[8];
 
 			for (uint i = 0; i < count; ++i) {
-				rows[i] = RowForNodeId(nodes[i]);
-				cols[i] = ColumnForNodeId(nodes[i]);
-				blocks[i] = BlockForNodeId(nodes[i]);
+				rows[i] = BoardUtils::RowForNodeId(nodes[i]);
+				cols[i] = BoardUtils::ColumnForNodeId(nodes[i]);
+				blocks[i] = BoardUtils::BlockForNodeId(nodes[i]);
 			}
 
 			if (std::adjacent_find(rows, rows + count, std::not_equal_to<>()) == rows + count)
@@ -150,12 +172,12 @@ namespace dd
 		}
 
 		constexpr SudokuBitBoard SharedNeighboursClearSelf(u32 node1, u32 node2) {
-			const u32 c1 = ColumnForNodeId(node1);
-			const u32 c2 = ColumnForNodeId(node2);
-			const u32 r1 = RowForNodeId(node1);
-			const u32 r2 = RowForNodeId(node2);
-			const u32 b1 = BlockForNodeId(node1);
-			const u32 b2 = BlockForNodeId(node2);
+			const u32 c1 = BoardUtils::ColumnForNodeId(node1);
+			const u32 c2 = BoardUtils::ColumnForNodeId(node2);
+			const u32 r1 = BoardUtils::RowForNodeId(node1);
+			const u32 r2 = BoardUtils::RowForNodeId(node2);
+			const u32 b1 = BoardUtils::BlockForNodeId(node1);
+			const u32 b2 = BoardUtils::BlockForNodeId(node2);
 
 			BitBoard sharedNeighbours;
 
@@ -170,6 +192,14 @@ namespace dd
 			sharedNeighbours.clearBit(node2);
 
 			return sharedNeighbours;
+		}
+
+		SudokuBitBoard SharedNeighborsClearSelf(const u8* nodes, u8 count) {
+			u16 temp[9];
+			for (uint i = 0; i < count; ++i)
+				temp[i] = nodes[i];
+
+			return SharedNeighborsClearSelf(&temp[0], count);
 		}
 
 		//////////////////////////////////////////////////////

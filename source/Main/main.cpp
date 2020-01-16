@@ -30,38 +30,12 @@ namespace dd
 		if (context.Unsolved == BitBoard{})
 			return true;
 
-		if (techniques::removeNaiveCandidates(context)) {
-			return true;
+		auto techniques = techniques::allTechniques();
+		for (uint i = 0, end = techniques.size(); i < end; ++i) {
+			techniques::TechniqueFunction& technique = techniques[i];
+			if (technique(context))
+				return true;
 		}
-
-		if (techniques::removeNakedSingle(context)) {
-			return true;
-		}
-
-		if (techniques::removeHiddenSingle(context)) {
-			return true;
-		}
-
-		if (techniques::removeNakedPair(context)) {
-			return true;
-		}
-
-		if (techniques::removeNakedTriplet(context)) {
-			return true;
-		}
-
-		if (techniques::removeHiddenPair(context)) {
-			return true;
-		}
-
-		if (techniques::removeHiddenTriplet(context)) {
-			return true;
-		}
-
-		if (techniques::pointingPair(context)) {
-			return true;
-		}
-
 		return false;
 	}
 
@@ -140,8 +114,8 @@ int main()
 		}
 		if (!PerformanceRun)
 		{
-			printCandidateOutput(Techniques::NakedPair);
 			printSudokuBoard(board);
+			printCandidateOutput(Techniques::NakedPair);
 			if (solved)
 				validateSolvedCorectly(board);
 			else

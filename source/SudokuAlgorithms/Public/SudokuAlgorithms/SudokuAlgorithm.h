@@ -16,6 +16,7 @@
 #include <SudokuAlgorithms/Module.h>
 #include <SudokuAlgorithms/SudokuTypes.h>
 #include <SudokuAlgorithms/Meta.h>
+#include <SudokuAlgorithms/TechniqueMeta.h>
 
 namespace dd
 {
@@ -323,7 +324,7 @@ namespace dd
 			for (uint i = 0; i < numPotentials; ++i) {
 				const NakedMatch& match = matches[i];
 
-				const BitBoard sharedNeighbours = BoardBits::DistinctNeighboursClearSelf(match.nodeIds, depth);
+				const BitBoard sharedNeighbours = BoardBits::SharedNeighborsClearSelf(match.nodeIds, depth);
 				const BitBoard nodesWithMaskedCandidates = BoardUtils::mergeCandidateBoards(p, match.combinedMask);
 				const BitBoard affectedNodes = nodesWithMaskedCandidates & sharedNeighbours;
 
@@ -482,6 +483,40 @@ namespace dd
 			return false;
 		}
 
+		bool removeNakedQuad(SudokuContext& p) {
+			p.result.Technique = Techniques::NakedQuad;
+			const u8 depth = 4;
+
+			return removeNakedCandidatesInternal(p, depth);
+		}
+
+		bool removeHiddenQuad(SudokuContext& p) {
+			p.result.Technique = Techniques::HiddenQuad;
+			std::vector<HiddenMatch> matches;
+			const u8 depth = 4;
+
+			removeHiddenInternal(matches, p, depth);
+			// in dimension, foreach candidate, count how many nodes have this candidate
+			// if bitCount of candidates are shared by a few amount of nodes
+
+			if (!matches.empty())
+			{
+				for (auto&& match : matches) {
+					for (uint i = 0; i < match.numNodes; ++i) {
+						const u8 nodeId = match.nodes[i];
+						Node& node = p.b.Nodes[nodeId];
+						p.result.append(node, nodeId);
+
+						node.candidatesSet(match.candidateMask);
+					}
+
+				}
+
+				return p.result.size() > 0;
+			}
+			return false;
+		}
+
 		bool pointingPair(SudokuContext& p) {
 			p.result.Technique = Techniques::PointingPair;
 
@@ -490,7 +525,68 @@ namespace dd
 					// this is a pointing pair
 					// all other nodes in that row/column can remove that candidate
 
+			struct Match {
+				u8 numNodes{};
+				u8 nodes[4]{};
+				uint candidateId;
+			};
+
+			Match matches[81];
+			uint numMatches = 0;
+
+			const uint firstBlock = 18;
+			for (uint i = 0; i < 9; ++i) {
+				auto&& block = p.AllDimensions[firstBlock + i];
+				uint c = 0;
+				for (auto&& candidateBoard : p.AllCandidates) {
+					const BitBoard filteredNodes = block & candidateBoard;
+					u8 nodes[9];
+					const u8 numNodes = filteredNodes.fillSetBits(nodes);
+					if (numNodes <= 3) {
+						const bool sameRow = BoardUtils::sharesRow(nodes, numNodes);
+						const bool sameCol = BoardUtils::sharesColumn(nodes, numNodes);
+
+						if (sameRow || sameCol) {
+							Match& match = matches[numMatches];
+							uint j = 0;
+							while (j < 4) {
+								match.nodes[j] = nodes[j];
+								j++;
+							}
+							match.numNodes = numNodes;
+							match.candidateId = c;
+							numMatches++;
+						}
+					}
+					c++;
+				}
+			}
+
+			if (numMatches > 0) {
+				for (uint i = 0; i < numMatches; ++i) {
+					const Match& match = matches[i];
+					const BitBoard neighbours = BoardBits::SharedNeighborsClearSelf(match.nodes, match.numNodes);
+					const BitBoard neighboursWithCandidate = p.AllCandidates[match.candidateId];
+					if (neighboursWithCandidate.notEmpty()) {
+						neighboursWithCandidate.foreachSetBit([&p](u32 bit) {
+							p.result.append(p.b.Nodes[bit], static_cast<u8>(bit));
+						});
+					}
+				}
+			}
+
 			return false;
 		}
-	}
-}
+
+		using TechniqueFunction = std::function<bool(SudokuContext& p)>;
+		std::vector<TechniqueFunction> allTechniques() {
+			std::vector<TechniqueFunction> out = {
+				removeNaiveCandidates,
+				removeNakedSingle, removeNakedPair, removeNakedTriplet, removeNakedQuad,
+				removeHiddenSingle, removeHiddenPair, removeHiddenTriplet, removeHiddenQuad,
+				pointingPair
+			};
+			return out;
+		}
+	} // techniques
+} // dd

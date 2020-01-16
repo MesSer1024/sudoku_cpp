@@ -48,9 +48,14 @@ namespace dd
 	}
 
 	void printCandidateOutput(Techniques lowestPrinted) {
+
+
 		for (uint i = 0, end = g_numIterations; i < end; ++i) {
-			if(g_techniqueUsedInIteration[i] >= lowestPrinted)
-				printf("%u: Made %u changes with technique %u\n", i, g_nodesChangedInIteration[i], g_techniqueUsedInIteration[i]);
+			if (g_techniqueUsedInIteration[i] >= lowestPrinted)
+			{
+				const char* techniqueName = TechniqueNameLookup[g_techniqueUsedInIteration[i]];
+				printf("%u: Made %u changes with technique %s\n", i, g_nodesChangedInIteration[i], techniqueName);
+			}
 		}
 	}
 

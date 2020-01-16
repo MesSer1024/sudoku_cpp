@@ -196,9 +196,9 @@ namespace dd
 		{
 			const u32 NodeId = 2;
 			BitBoard neighbours = BoardBits::NeighboursForNodeCombined(NodeId);
-			BoardBits::SudokuBitBoard ExpectedRow = BoardBits::BitRow(BoardBits::RowForNodeId(NodeId));
-			BoardBits::SudokuBitBoard ExpectedColumn = BoardBits::BitColumn(BoardBits::ColumnForNodeId(NodeId));
-			BoardBits::SudokuBitBoard ExpectedBlock = BoardBits::BitBlock(BoardBits::BlockForNodeId(NodeId));
+			BoardBits::SudokuBitBoard ExpectedRow = BoardBits::BitRow(BoardUtils::RowForNodeId(NodeId));
+			BoardBits::SudokuBitBoard ExpectedColumn = BoardBits::BitColumn(BoardUtils::ColumnForNodeId(NodeId));
+			BoardBits::SudokuBitBoard ExpectedBlock = BoardBits::BitBlock(BoardUtils::BlockForNodeId(NodeId));
 
 			ExpectedRow.clearBit(NodeId);
 			ExpectedColumn.clearBit(NodeId);

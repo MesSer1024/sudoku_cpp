@@ -47,8 +47,9 @@ namespace dd
 		boards.emplace_back(".....1.3.231.9.....65..31..6789243..1.3.5...6...1367....936.57...6.198433........"); //Hidden triples
 
 		//pointing pairs required
-		boards.emplace_back("5..683....8..7......6.2..7....2.5....9.7..35.81.........9......43....1........82."); // Pointing pairs
 		//boards.emplace_back("....3..86....2..4..9..7852.3718562949..1423754..3976182..7.3859.392.54677..9.4132"); //Naked Triple/Quads
+		boards.emplace_back("5..683....8..7......6.2..7....2.5....9.7..35.81.........9......43....1........82."); // Pointing pairs
+		boards.emplace_back(".179.36......8....9.....5.7.72.1.43....4.2.7..6437.25.7.1....65....3......56.172."); // Pointing pairs
 		//boards.emplace_back("42.9..386.6.2..7948.9.6.2517....3.259..1.26.32..5....8..4.2.5676827..439......812"); //Unique Rectangle | Also good because solver at sudokuwiki.org uses unneccessary techniques such as simple colouring & X-cycle which removes candidates but is unneccessary for solution
 		//boards.emplace_back("1.957.3...7.39..1...3.1.597.8.743...492.5.78373.289.4.317.2.4..26..3..7.95..67231"); //(Hidden Unique Rectangle - type 1)
 		//boards.emplace_back("5..291836.3.475.1...9386457.5.143...4..7.9..1...8.2.4.3...2.17..8.937.2.7.2.1...3"); //(Hidden Unique Rectangle - type 2)
