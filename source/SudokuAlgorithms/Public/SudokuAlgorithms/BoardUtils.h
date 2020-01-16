@@ -237,6 +237,17 @@ namespace dd
 
 			return out;
 		}
+
+		bool sharesSameBlock(u8& outBlockId, const BitBoard& nodes) {
+			for (uint i = 0; i < 9; ++i) {
+				const BitBoard inBlock = BitBlock(i) & nodes;
+				if (inBlock == nodes) {
+					outBlockId = static_cast<u8>(i);
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 
 	namespace BoardUtils {

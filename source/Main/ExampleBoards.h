@@ -47,10 +47,9 @@ namespace dd
 		boards.emplace_back(".....1.3.231.9.....65..31..6789243..1.3.5...6...1367....936.57...6.198433........"); //Hidden triples
 
 		//pointing pairs required
-		//boards.emplace_back("....3..86....2..4..9..7852.3718562949..1423754..3976182..7.3859.392.54677..9.4132"); //Naked Triple/Quads
+		boards.emplace_back("....3..86....2..4..9..7852.3718562949..1423754..3976182..7.3859.392.54677..9.4132"); //Naked Triple/Quads
 		boards.emplace_back("5..683....8..7......6.2..7....2.5....9.7..35.81.........9......43....1........82."); // Pointing pairs
-		boards.emplace_back(".179.36......8....9.....5.7.72.1.43....4.2.7..6437.25.7.1....65....3......56.172."); // Pointing pairs
-		//boards.emplace_back("42.9..386.6.2..7948.9.6.2517....3.259..1.26.32..5....8..4.2.5676827..439......812"); //Unique Rectangle | Also good because solver at sudokuwiki.org uses unneccessary techniques such as simple colouring & X-cycle which removes candidates but is unneccessary for solution
+		boards.emplace_back("42.9..386.6.2..7948.9.6.2517....3.259..1.26.32..5....8..4.2.5676827..439......812"); //Unique Rectangle | Also good because solver at sudokuwiki.org uses unneccessary techniques such as simple colouring & X-cycle which removes candidates but is unneccessary for solution
 		//boards.emplace_back("1.957.3...7.39..1...3.1.597.8.743...492.5.78373.289.4.317.2.4..26..3..7.95..67231"); //(Hidden Unique Rectangle - type 1)
 		//boards.emplace_back("5..291836.3.475.1...9386457.5.143...4..7.9..1...8.2.4.3...2.17..8.937.2.7.2.1...3"); //(Hidden Unique Rectangle - type 2)
 		//boards.emplace_back(".2.58..3.35.....84.867...2..48.9.1565..6.8.4.963.5.278.9..6581.6..8...9283.....6."); //(Hidden Unique Rectangle - type 2b)
@@ -61,6 +60,7 @@ namespace dd
 		//boards.emplace_back("..463.5..6.54.1..337..5964.938.6.154457198362216345987.435.6.19.6.9.34.55.9.14.36"); //Simple colouring (rule 5)
 		//boards.emplace_back(".16..78.3.9.8.....87...126..48...3..65...9.82.39...65..6.9...2..8...29369246..51."); //Box-Line Reduction & Y-Wing
 		//boards.emplace_back(".2.9437159.4...6..75.....4.5..48....2.....4534..352....42....81..5..426..9.2.85.4"); // Box-Line reduction(s) & Y-Wing
+		//boards.emplace_back(".179.36......8....9.....5.7.72.1.43....4.2.7..6437.25.7.1....65....3......56.172."); // Pointing pairs + box line reduction + simple colouring + y-wing
 		//boards.emplace_back("9..24.....5.69.231.2..5..9..9.7..32...29356.7.7...29...69.2..7351..79.622.7.86..9"); //Y-Wing
 
 		////hard

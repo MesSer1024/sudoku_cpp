@@ -31,7 +31,7 @@ namespace dd
 			return true;
 
 		auto techniques = techniques::allTechniques();
-		for (uint i = 0, end = techniques.size(); i < end; ++i) {
+		for (auto i = 0ULL, end = techniques.size(); i < end; ++i) {
 			techniques::TechniqueFunction& technique = techniques[i];
 			if (technique(context))
 				return true;

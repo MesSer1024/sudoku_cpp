@@ -542,7 +542,7 @@ namespace dd
 					const BitBoard filteredNodes = block & candidateBoard;
 					u8 nodes[9];
 					const u8 numNodes = filteredNodes.fillSetBits(nodes);
-					if (numNodes <= 3) {
+					if (numNodes > 0 && numNodes <= 3) {
 						const bool sameRow = BoardUtils::sharesRow(nodes, numNodes);
 						const bool sameCol = BoardUtils::sharesColumn(nodes, numNodes);
 
@@ -566,25 +566,70 @@ namespace dd
 				for (uint i = 0; i < numMatches; ++i) {
 					const Match& match = matches[i];
 					const BitBoard neighbours = BoardBits::SharedNeighborsClearSelf(match.nodes, match.numNodes);
-					const BitBoard neighboursWithCandidate = p.AllCandidates[match.candidateId];
+					const BitBoard neighboursWithCandidate = p.AllCandidates[match.candidateId] & neighbours;
 					if (neighboursWithCandidate.notEmpty()) {
-						neighboursWithCandidate.foreachSetBit([&p](u32 bit) {
-							p.result.append(p.b.Nodes[bit], static_cast<u8>(bit));
+						p.result.storePreModification(p.b.Nodes, neighboursWithCandidate);
+						neighboursWithCandidate.foreachSetBit([&p, &match](u32 bit) {
+
+							const u16 candidate = static_cast<u16>(match.candidateId + 1);
+							p.b.Nodes[bit].candidatesRemoveSingle(candidate);
 						});
 					}
 				}
 			}
 
-			return false;
+			return p.result.size() > 0;
+		}
+
+		bool boxLineReduction(SudokuContext& p) {
+			p.result.Technique = Techniques::BoxLineReduction;
+
+			// this technique is related to looking at a column/row and making sure that a value MUST exist in that row.
+			// if we know that the value must reside in ONE ROW and it is in the same block, all other nodes within that block can remove candidate since it must appear on that row/col 
+
+			// search for candidates contained in a row or column where they within that row/column are all in the same block (2-3)
+			// (candidates & row) -> "have same block" || (candidates & col) -> "have same block"
+			//		IF -> (candidates & blockId_from_previous) != (candidates & row) | (candidates & col)
+			//			(candidates & blockId_from_previous) ^ (candidates & row) | (candidates & col)
+
+			for (uint c = 0; c < 9; ++c) {
+				const BitBoard& candidates = p.AllCandidates[c];
+				for (uint i = 0; i < 9; ++i) {
+					const BitBoard inRow = candidates & BoardBits::BitRow(i);
+					const BitBoard inColumn = candidates & BoardBits::BitColumn(i);
+					
+					if (inRow.countSetBits() >= 2) {
+						u8 blockId;
+						if (BoardBits::sharesSameBlock(blockId, inRow)) {
+							const BitBoard inBlock = candidates & BoardBits::BitBlock(blockId);
+							const BitBoard Diff = inRow ^ inBlock;
+							if (Diff.notEmpty()) {
+								p.result.storePreModification(p.b.Nodes, Diff);
+
+								const u16 candidate = static_cast<u16>(c + 1);
+								Diff.foreachSetBit([&p, candidate](u32 bit) {
+
+									p.b.Nodes[bit].candidatesRemoveSingle(candidate);
+								});
+							}
+						}
+					}
+				}
+			}
+
+			return p.result.size() > 0;
 		}
 
 		using TechniqueFunction = std::function<bool(SudokuContext& p)>;
 		std::vector<TechniqueFunction> allTechniques() {
 			std::vector<TechniqueFunction> out = {
 				removeNaiveCandidates,
-				removeNakedSingle, removeNakedPair, removeNakedTriplet, removeNakedQuad,
-				removeHiddenSingle, removeHiddenPair, removeHiddenTriplet, removeHiddenQuad,
-				pointingPair
+				removeNakedSingle, removeHiddenSingle,
+				removeNakedPair, removeNakedTriplet, 
+				removeHiddenPair, removeHiddenTriplet, 
+				removeNakedQuad, removeHiddenQuad,
+				pointingPair,
+				boxLineReduction,
 			};
 			return out;
 		}

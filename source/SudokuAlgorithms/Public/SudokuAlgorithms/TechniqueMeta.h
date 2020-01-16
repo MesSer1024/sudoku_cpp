@@ -21,6 +21,7 @@ namespace dd
 		NakedQuad,
 		HiddenQuad,
 		PointingPair,
+		BoxLineReduction,
 	};
 
 //namespace techniques
@@ -57,6 +58,7 @@ std::map<Techniques, const char*> TechniqueNameLookup = {
 	TechniqueName(Techniques::NakedQuad, "Naked Quad"),
 	TechniqueName(Techniques::NakedQuad, "Hidden Quad"),
 	TechniqueName(Techniques::PointingPair, "PointingPair"),
+	TechniqueName(Techniques::BoxLineReduction, "BoxLineReduction"),
 
 };
 
