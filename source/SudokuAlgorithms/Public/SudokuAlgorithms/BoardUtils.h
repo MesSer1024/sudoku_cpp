@@ -238,11 +238,33 @@ namespace dd
 			return out;
 		}
 
-		bool sharesSameBlock(u8& outBlockId, const BitBoard& nodes) {
+		bool sharesBlock(u8& outBlockId, const BitBoard& nodes) {
 			for (uint i = 0; i < 9; ++i) {
 				const BitBoard inBlock = BitBlock(i) & nodes;
 				if (inBlock == nodes) {
 					outBlockId = static_cast<u8>(i);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		bool sharesColumn(u8& outColumnId, const BitBoard& nodes) {
+			for (uint i = 0; i < 9; ++i) {
+				const BitBoard inBlock = BitColumn(i) & nodes;
+				if (inBlock == nodes) {
+					outColumnId = static_cast<u8>(i);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		bool sharesRow(u8& outRowId, const BitBoard& nodes) {
+			for (uint i = 0; i < 9; ++i) {
+				const BitBoard inBlock = BitRow(i) & nodes;
+				if (inBlock == nodes) {
+					outRowId = static_cast<u8>(i);
 					return true;
 				}
 			}

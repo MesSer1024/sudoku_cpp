@@ -22,28 +22,8 @@ namespace dd
 		HiddenQuad,
 		PointingPair,
 		BoxLineReduction,
+		X_Wing,
 	};
-
-//namespace techniques
-//{
-//	bool removeNakedSingle(SudokuContext& p);
-//	bool removeNakedPair(SudokuContext& p);
-//	bool removeNakedTriplet(SudokuContext& p);
-//	bool removeNakedQuad(SudokuContext& p);
-//	bool removeHiddenSingle(SudokuContext& p);
-//	bool removeHiddenPair(SudokuContext& p);
-//	bool removeHiddenTriplet(SudokuContext& p);
-//	bool removeHiddenQuad(SudokuContext& p);
-//	bool pointingPair(SudokuContext& p);
-//}
-//
-//
-//
-//using TechniqueFunction = std::function<bool(SudokuContext& p)>;
-//using TechniqueFunctionPair = std::pair<Techniques, TechniqueFunction>;
-//std::map<Techniques, TechniqueFunction> TechniqueFunctionLookup = {
-//	TechniqueFunctionPair(Techniques::NakedSingle, techniques::removeNakedSingle),
-//};
 
 using TechniqueName = std::pair<Techniques, const char*>;
 std::map<Techniques, const char*> TechniqueNameLookup = {
@@ -59,6 +39,7 @@ std::map<Techniques, const char*> TechniqueNameLookup = {
 	TechniqueName(Techniques::NakedQuad, "Hidden Quad"),
 	TechniqueName(Techniques::PointingPair, "PointingPair"),
 	TechniqueName(Techniques::BoxLineReduction, "BoxLineReduction"),
+	TechniqueName(Techniques::X_Wing, "X-Wing"),
 
 };
 

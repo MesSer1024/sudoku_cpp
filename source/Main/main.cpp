@@ -39,7 +39,7 @@ namespace dd
 		return false;
 	}
 
-	bool beginSolveBoard(Board& b, Result& result)	{
+	bool solveBoard(Board& b, Result& result)	{
 		// do an early iteration to fill candidates and remove the known nodes (from neighbouring solved nodes)
 		{
 			SudokuContext context = buildContext(b, result);
@@ -86,12 +86,14 @@ void runValidations()
 int main()
 {
 #ifdef DD_DEBUG
-	const bool PerformanceRun = false;
-#else
-	const bool PerformanceRun = true;
-#endif
+	const bool PrintVerbose = true;
 	const bool Validate = true;
 	const bool StopOnFirstUnsolved = false;
+#else
+	const bool PrintVerbose = false;
+	const bool Validate = false;
+	const bool StopOnFirstUnsolved = false;
+#endif
 
 	if(Validate)
 		runValidations();
@@ -108,11 +110,8 @@ int main()
 		Board& board = boards[i];
 		Result outcome;
 
-		bool solved;
-		{
-			solved = beginSolveBoard(board, outcome);
-		}
-		if (!PerformanceRun)
+		bool solved = solveBoard(board, outcome);
+		if (PrintVerbose)
 		{
 			printSudokuBoard(board);
 			printCandidateOutput(Techniques::NakedPair);
@@ -122,9 +121,9 @@ int main()
 				validateNoDuplicates(board); 
 			cout << "BoardIndex: " << i << "\t\t" << (solved ? "solved" : "unsolved") << endl;
 
-			if (StopOnFirstUnsolved && !solved)
-				break;
 		}
+		if (StopOnFirstUnsolved && !solved)
+			break;
 	}
 
 	cout << "-------------------" << endl;
