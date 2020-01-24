@@ -596,7 +596,7 @@ namespace dd
 				const BitBoard& candidates = p.AllCandidates[c];
 				for (uint i = 0; i < 9; ++i) {
 					const BitBoard boards[2] = { candidates & BoardBits::BitRow(i), candidates & BoardBits::BitColumn(i) };
-					
+
 					for (auto&& dimension : boards) {
 						if (dimension.countSetBits() >= 2) {
 							u8 blockId;
@@ -621,6 +621,78 @@ namespace dd
 			return p.result.size() > 0;
 		}
 
+		struct XwingCombination {
+			uint node1;
+			uint node2;
+			uint dimensionId;
+			uint candidateId;
+		};
+
+		struct XwingPotential {
+			u8 candidateId;
+			u8 dimensionId;
+			BitBoard board;
+		};
+
+		uint fillXwingCombo(XwingCombination* xwings, const XwingPotential* potentials, u8 first, u8 end)
+		{
+			auto getDir = [](u8 dimension) {
+				if (dimension / 9 == 0)
+					return 0; // row
+				if (dimension / 9 == 1)
+					return 1; // column
+				return 2; // block
+			};
+
+			auto getOtherDimension = [getDir](u8 dimensionId) -> BitBoard {
+				const uint dir = getDir(dimensionId);
+				if (dir == 0)
+					return BoardBits::BitRow(dimensionId);
+				else
+					return BoardBits::BitColumn(dimensionId - 9);
+			};
+
+			u32 numCombinations = 0;
+
+			const u8 ExpectedDirection = getDir(potentials[first].dimensionId);
+			const bool isRow = ExpectedDirection == 0u;
+#ifdef DD_DEBUG
+			for (uint i = first; i < end; ++i) {
+				const u8 otherDir = getDir(potentials[i].dimensionId);
+				if(otherDir != ExpectedDirection)
+					assert(false);
+			}
+#endif
+			for (uint i = first; i < end; ++i) {
+				for (uint j = i + 1; j < end; ++j) {
+					// foreach combination in row::
+					// check if both nodes in both rows share the same column
+					// combine boards of row1 | row2, mask with all columns? same size as before
+
+					const BitBoard dimensionMerged = potentials[i].board | potentials[j].board;
+#ifdef DD_DEBUG
+					assert(dimensionMerged.countSetBits() == 4u);
+#endif
+					for (uint dirId = 0; dirId < 9; ++dirId) {
+						const BitBoard otherDimension = dimensionMerged & (isRow ? BoardBits::BitColumn(dirId) : BoardBits::BitRow(dirId));
+						const u8 numOtherDimension = otherDimension.countSetBits();
+						// since we are merging two rows[or columns] each containing exactly two candidates, we want to validate that when going in other direction, count is 2
+						if (numOtherDimension == 2u)
+						{
+							u8 nodes[9];
+							otherDimension.fillSetBits(nodes);
+							XwingCombination& x = xwings[numCombinations++];
+							x.node1 = nodes[0];
+							x.node2 = nodes[1];
+							x.dimensionId = isRow ? dirId + 9u : dirId; // yes this is supposed to be reversed...
+							x.candidateId = potentials[i].candidateId;
+						}
+					}
+				}
+			}
+			return numCombinations;
+		}
+
 		bool xWing(SudokuContext& p) {
 			p.result.Technique = Techniques::X_Wing;
 
@@ -629,36 +701,14 @@ namespace dd
 			//	then all other candidates for this value in the columns can be eliminated.
 			//		or cells -> rows
 
-			struct Potential {
-				u8 candidateId;
-				u8 dimensionId;
-				BitBoard board;
-			};
 
-			struct Range {
-				u8 begin;
-				u8 mid;
-				u8 end;
-			};
-
-			Potential potentials[100];
-			u8 numPotentials = 0;
-
-			struct XwingCombination {
-				uint node1;
-				uint node2;
-				uint dimensionId;
-				uint candidateId;
-			};
-
-			uint numCombinations = 0;
 			XwingCombination xwings[100];
+			XwingPotential potentials[100];
+			uint numXwings = 0;
 
-			// locate two rows where a candidate only occurs twice
-				// check if candidate in those rows also share the same column
-
-			// check for strict candiates over all rows
+			// check for strict candiates over all rows and columns
 			for (u8 c = 0; c < 9; ++c) {
+				u8 numPotentials = 0;
 				const BitBoard& candidates = p.AllCandidates[c];
 				const u8 rowStart = numPotentials;
 
@@ -666,123 +716,57 @@ namespace dd
 					const BitBoard inRow = candidates & BoardBits::BitRow(i);
 					const u8 numNodesInRow = inRow.countSetBits();
 					if (numNodesInRow == 2) {
-						Potential& match = potentials[numPotentials++];
+						XwingPotential& match = potentials[numPotentials++];
 						match.board = inRow;
 						match.candidateId = c;
 						match.dimensionId = i;
 					}
 				}
 
-				if (numPotentials - rowStart >= 2) {
-					// need to figure out if any two different rows share the same columns
+				const u8 rowEnd = numPotentials;
+				const u8 colStart = numPotentials;
 
-					for (uint i = rowStart; i < numPotentials; ++i) {
-						for (uint j = i + 1; j < numPotentials; ++j) {
-							// foreach combination in row::
-								// check if both nodes in both rows share the same column
-									// combine boards of row1 | row2, mask with all columns? same size as before
-
-							const BitBoard dimensionMerged = potentials[i].board | potentials[j].board;
-#ifdef DD_DEBUG
-							assert(dimensionMerged.countSetBits() == 4u);
-							assert(std::abs(potentials[i].dimensionId - potentials[j].dimensionId) <= 10);
-
-#endif
-							for (uint colId = 0; colId < 9; ++colId) {
-								const BitBoard otherDimension = dimensionMerged & BoardBits::BitColumn(colId);
-								const u8 numOtherDimension = otherDimension.countSetBits();
-								// since we are merging two columns each containing exactly two candidates, we want to validate that when going by rows, count is 2
-								if (numOtherDimension == 2u)
-								{
-									u8 nodes[9];
-									otherDimension.fillSetBits(nodes);
-									XwingCombination& x = xwings[numCombinations++];
-									x.node1 = nodes[0];
-									x.node2 = nodes[1];
-									x.dimensionId = colId + 9u;
-									x.candidateId = c;
-								}
-							}
-						}
-					}
-				}  else {
-					// revert since this cannot be a match...
-					numPotentials = rowStart;
-				}
-
-
-				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				//////////////////////////////////////// COLUMNS ///////////////////////////////////////////////////////////////////////
-				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				const u8 columnStart = numPotentials;
 				for (u8 i = 0; i < 9; ++i) {
-					const BitBoard inCol = candidates & BoardBits::BitColumn(i);
-					const u8 numNodes = inCol.countSetBits();
-					if (numNodes == 2) {
-						Potential& match = potentials[numPotentials++];
-						match.board = inCol;
+					const BitBoard inColumn = candidates & BoardBits::BitColumn(i);
+					const u8 numNodesInColumn = inColumn.countSetBits();
+					if (numNodesInColumn == 2) {
+						XwingPotential& match = potentials[numPotentials++];
+						match.board = inColumn;
 						match.candidateId = c;
 						match.dimensionId = i + 9;
 					}
 				}
 
-				if (numPotentials - columnStart >= 2) {
-					// need to figure out if any two different columns share the same rows
+				const u8 colEnd = numPotentials;
+				// need to figure out if any two different rows share the same columns
 
-					for (uint i = columnStart; i < numPotentials; ++i) {
-						for (uint j = i + 1; j < numPotentials; ++j) {
-							// foreach combination in column::
-							// check if both nodes in both columns share the same row
-							// combine boards of col1 | col2, mask with all rows? same size as before
+				if(rowEnd - rowStart >= 2)
+					numXwings += fillXwingCombo(xwings + numXwings, potentials, rowStart, rowEnd);
 
-							const BitBoard dimensionMerged = potentials[i].board | potentials[j].board;
-#ifdef DD_DEBUG
-							assert(dimensionMerged.countSetBits() == 4u);
-							assert(std::abs(potentials[i].dimensionId - potentials[j].dimensionId) <= 10);
-
-#endif
-							for (uint rowId = 0; rowId < 9; ++rowId) {
-								const BitBoard otherDimension = dimensionMerged & BoardBits::BitRow(rowId);
-								const u8 numOtherDimension = otherDimension.countSetBits();
-								// since we are merging two columns each containing exactly two candidates, we want to validate that when going by rows, count is 2
-								if (numOtherDimension == 2u)
-								{
-									u8 nodes[9];
-									otherDimension.fillSetBits(nodes);
-									XwingCombination& x = xwings[numCombinations++];
-									x.node1 = nodes[0];
-									x.node2 = nodes[1];
-									x.dimensionId = rowId + 0u;
-									x.candidateId = c;
-								}
-							}
-						}
-					}
-				} else {
-					numPotentials = columnStart;
-				}
+				if (colEnd - colStart >= 2)
+					numXwings += fillXwingCombo(xwings + numXwings, potentials, colStart, colEnd);
 			}
 
-			if (numCombinations > 0) {
-				for (uint i = 0; i < numCombinations; ++i) {
-					const XwingCombination& xwing = xwings[i];
-					const BitBoard candidates = p.AllCandidates[xwing.candidateId];
-					BitBoard inDimension;
-					if(xwing.dimensionId < 10)
-						inDimension = candidates & BoardBits::BitRow(xwing.dimensionId);
-					else
-						inDimension = candidates & BoardBits::BitColumn(xwing.dimensionId - 9);
-					if (inDimension.countSetBits() > 2) {
-						assert(inDimension.test(xwing.node1));
-						assert(inDimension.test(xwing.node2));
-						inDimension.clearBit(xwing.node1);
-						inDimension.clearBit(xwing.node2);
+			// APPLY TECHNIQUE
+			for (uint i = 0; i < numXwings; ++i) {
+				const XwingCombination& xwing = xwings[i];
+				const BitBoard candidates = p.AllCandidates[xwing.candidateId];
+				BitBoard inDimension;
+				if (xwing.dimensionId < 10)
+					inDimension = candidates & BoardBits::BitRow(xwing.dimensionId);
+				else
+					inDimension = candidates & BoardBits::BitColumn(xwing.dimensionId - 9);
+				if (inDimension.countSetBits() > 2) {
 
-						inDimension.foreachSetBit([&p, &xwing](u32 bit) {
-							p.result.append(p.b.Nodes[bit], bit);
-							p.b.Nodes[bit].candidatesRemoveSingle(xwing.candidateId + 1);
-						});
-					}
+					assert(inDimension.test(xwing.node1));
+					assert(inDimension.test(xwing.node2));
+					inDimension.clearBit(xwing.node1);
+					inDimension.clearBit(xwing.node2);
+
+					inDimension.foreachSetBit([&p, &xwing](u32 bit) {
+						p.result.append(p.b.Nodes[bit], (u8)bit);
+						p.b.Nodes[bit].candidatesRemoveSingle((u8)(xwing.candidateId + 1));
+					});
 				}
 			}
 
