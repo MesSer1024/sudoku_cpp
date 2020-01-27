@@ -624,7 +624,7 @@ namespace dd
 		struct XwingCombination {
 			uint node1;
 			uint node2;
-			uint dimensionId;
+			uint dimensionId_potentiallyMoreCandidates;
 			uint candidateId;
 		};
 
@@ -655,7 +655,7 @@ namespace dd
 			u32 numCombinations = 0;
 
 			const u8 ExpectedDirection = getDir(potentials[first].dimensionId);
-			const bool isRow = ExpectedDirection == 0u;
+			const bool rowBasedPotential = ExpectedDirection == 0u;
 #ifdef DD_DEBUG
 			for (uint i = first; i < end; ++i) {
 				const u8 otherDir = getDir(potentials[i].dimensionId);
@@ -673,20 +673,50 @@ namespace dd
 #ifdef DD_DEBUG
 					assert(dimensionMerged.countSetBits() == 4u);
 #endif
+					uint hitsInOtherDirection = 0;
+					uint others[9];
 					for (uint dirId = 0; dirId < 9; ++dirId) {
-						const BitBoard otherDimension = dimensionMerged & (isRow ? BoardBits::BitColumn(dirId) : BoardBits::BitRow(dirId));
+						const BitBoard otherDimension = dimensionMerged & (rowBasedPotential ? BoardBits::BitColumn(dirId) : BoardBits::BitRow(dirId));
 						const u8 numOtherDimension = otherDimension.countSetBits();
+//#error this is incorrect assumption, I think the correct bheeavior here must be to validate if they form a rectangle..., or rather if iterating all in "other dimension" if they have exactly 2 occurances with 2 matches
 						// since we are merging two rows[or columns] each containing exactly two candidates, we want to validate that when going in other direction, count is 2
 						if (numOtherDimension == 2u)
 						{
-							u8 nodes[9];
-							otherDimension.fillSetBits(nodes);
+							others[hitsInOtherDirection++] = dirId;
+						}
+					}
+
+					if (hitsInOtherDirection == 2u) {
+
+//# error cleanup this, this is the right assumption, need to figure out in what dir the "nodes" should be in order to make sense in next step....
+						{
+							uint dirId = others[0];
+							const BitBoard otherDimension1 = dimensionMerged & (rowBasedPotential ? BoardBits::BitColumn(dirId) : BoardBits::BitRow(dirId));
 							XwingCombination& x = xwings[numCombinations++];
+							u8 nodes[9];
+							u8 numCount = otherDimension1.fillSetBits(nodes);
+							assert(numCount == 2u);
 							x.node1 = nodes[0];
 							x.node2 = nodes[1];
-							x.dimensionId = isRow ? dirId + 9u : dirId; // yes this is supposed to be reversed...
+							x.dimensionId_potentiallyMoreCandidates = rowBasedPotential ? dirId + 9u : dirId; // reverse the outgoing ?
 							x.candidateId = potentials[i].candidateId;
 						}
+
+						{
+							uint dirId = others[1];
+							const BitBoard otherDimension1 = dimensionMerged & (rowBasedPotential ? BoardBits::BitColumn(dirId) : BoardBits::BitRow(dirId));
+							XwingCombination& x = xwings[numCombinations++];
+							u8 nodes[9];
+							u8 numCount = otherDimension1.fillSetBits(nodes);
+							assert(numCount == 2u); 
+							x.node1 = nodes[0];
+							x.node2 = nodes[1];
+							x.dimensionId_potentiallyMoreCandidates = rowBasedPotential ? dirId + 9u : dirId; // reverse the outgoing ?
+							x.candidateId = potentials[i].candidateId;
+						}
+					}
+					if (hitsInOtherDirection > 2u) {
+						assert(false); // it this something I should handle? Feels like it is something that is a match for algorithm
 					}
 				}
 			}
@@ -752,10 +782,10 @@ namespace dd
 				const XwingCombination& xwing = xwings[i];
 				const BitBoard candidates = p.AllCandidates[xwing.candidateId];
 				BitBoard inDimension;
-				if (xwing.dimensionId < 10)
-					inDimension = candidates & BoardBits::BitRow(xwing.dimensionId);
+				if (xwing.dimensionId_potentiallyMoreCandidates < 9)
+					inDimension = candidates & BoardBits::BitRow(xwing.dimensionId_potentiallyMoreCandidates);
 				else
-					inDimension = candidates & BoardBits::BitColumn(xwing.dimensionId - 9);
+					inDimension = candidates & BoardBits::BitColumn(xwing.dimensionId_potentiallyMoreCandidates - 9);
 				if (inDimension.countSetBits() > 2) {
 
 					assert(inDimension.test(xwing.node1));
