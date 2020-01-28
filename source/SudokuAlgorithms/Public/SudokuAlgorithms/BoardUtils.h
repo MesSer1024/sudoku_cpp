@@ -247,7 +247,7 @@ namespace dd
 			u8 numNodes;
 			u8 dimensionId;
 			u8 candidateId;
-			u8 nodes[9];
+			//u8 nodes[9]; // #todo : not sure if this is neccessary 
 		};
 
 		using CandidateBoards9 = std::array<CandidatesInDimensionBoard, 9>; // for instance all different rows
@@ -259,7 +259,8 @@ namespace dd
 				ref.board = p.AllCandidates[candidateId] & BoardBits::BitRow(i);
 				ref.candidateId = candidateId;
 				ref.dimensionId = rowToDimension(i);
-				ref.numNodes = ref.board.fillSetBits(ref.nodes);
+				//ref.numNodes = ref.board.fillSetBits(ref.nodes);
+				ref.numNodes = ref.board.countSetBits();
 			}
 			return out;
 		}
@@ -271,7 +272,8 @@ namespace dd
 				ref.board = p.AllCandidates[candidateId] & BoardBits::BitColumn(i);
 				ref.candidateId = candidateId;
 				ref.dimensionId = colToDimension(i);
-				ref.numNodes = ref.board.fillSetBits(ref.nodes);
+				//ref.numNodes = ref.board.fillSetBits(ref.nodes);
+				ref.numNodes = ref.board.countSetBits();
 			}
 			return out;
 		}
@@ -354,7 +356,7 @@ namespace dd
 			});
 		}
 
-		BitBoard boardWhereCandidateCountEquals(const SudokuContext& p, int maxCandidates, int minCandidates = 2) {
+		BitBoard boardWhereCandidateCountInRange(const SudokuContext& p, int maxCandidates, int minCandidates = 2) {
 			BitBoard potentials;
 			for (uint i = 0; i < BoardSize; ++i) {
 				Node n = p.b.Nodes[i];
@@ -366,7 +368,7 @@ namespace dd
 			return potentials;
 		}
 
-		void populateCandidateCount(u8* candidateCount, const SudokuContext& p, const BitBoard& affectedNodes) {
+		void countTimesEachCandidateOccur(u8* candidateCount, const SudokuContext& p, const BitBoard& affectedNodes) {
 			for (uint i = 0; i < 9; ++i) {
 				candidateCount[i] = (affectedNodes & p.AllCandidates[i]).countSetBits();
 			}

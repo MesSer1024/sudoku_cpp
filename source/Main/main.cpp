@@ -111,17 +111,20 @@ int main()
 		Result outcome;
 
 		bool solved = solveBoard(board, outcome);
+		
 		if (PrintVerbose)
 		{
 			printSudokuBoard(board);
 			printCandidateOutput(Techniques::NakedPair);
+		
 			if (solved)
 				validateSolvedCorectly(board);
 			else
 				validateNoDuplicates(board); 
+			
 			cout << "BoardIndex: " << i << "\t\t" << (solved ? "solved" : "unsolved") << endl;
-
 		}
+
 		if (StopOnFirstUnsolved && !solved)
 			break;
 	}

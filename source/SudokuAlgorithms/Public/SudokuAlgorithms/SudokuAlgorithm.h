@@ -277,7 +277,7 @@ namespace dd
 			//				check if any other node in "dimension" has any of "combined_candidates", if so technique was successful and that candidate can be removed from neighbour
 			// -----------------------------------------
 
-			BitBoard allNakedNodes = BoardUtils::boardWhereCandidateCountEquals(p, depth);
+			BitBoard allNakedNodes = BoardUtils::boardWhereCandidateCountInRange(p, depth);
 			NodePermutationGenerator combo(p, allNakedNodes, depth);
 
 			uint numMatches = 0;
@@ -377,7 +377,7 @@ namespace dd
 				u8 numNodesWithCandidate[9];
 				std::vector<u8> candidateIdsWithSufficientNodes(9);
 
-				BoardUtils::populateCandidateCount(numNodesWithCandidate, p, unsolvedDimension);
+				BoardUtils::countTimesEachCandidateOccur(numNodesWithCandidate, p, unsolvedDimension);
 				const u8 numPotentials = transformWhereCountIsDepth(candidateIdsWithSufficientNodes.data(), numNodesWithCandidate, depth);
 
 				const bool techniqueCouldWork = numPotentials >= depth && numPotentials < numUnsolvedInDimension;
@@ -765,6 +765,130 @@ namespace dd
 			return p.result.size() > 0;
 		}
 
+		bool yWing(SudokuContext& p) {
+			p.result.Technique = Techniques::Y_Wing;
+
+			// three different candidates (A, B, C)
+			// they form a pattern where AB, BC, AC are on nodes that see eachother (think about a rectangle shape but we only care about 3 corners)
+			// in that rectangle shape, the 4th corner is known to NEVER have candidate C since it must be in either AC or BC
+			// hence the candidate can be removed from that position
+
+			// this algorithm can also be applied to cover "block", which makes this technique very powerful...
+
+			// one solution would be to check for all nodes that have exactly two candidates
+			// then take all combination of those nodes and see if they can form a y-wing pattern
+
+
+			const BitBoard nodesWithExactly2Candidates = BoardUtils::boardWhereCandidateCountInRange(p, 2, 2);
+			BitBoard specificCandidates[9];
+			u8 numSpecificCandidates[9];
+			for (uint i = 0; i < 9; ++i) {
+				specificCandidates[i] = nodesWithExactly2Candidates & p.AllCandidates[i];
+				numSpecificCandidates[i] = specificCandidates[i].countSetBits();
+			}
+
+			struct MyCandidates {
+				u8 c1;
+				u8 c2;
+			};
+			auto getMy2Candidates = [](BitBoard* specificCandidates, u8 nodeId) -> MyCandidates {
+				u8 c[2];
+				u8 numCandidats = 0;
+				for (u8 i = 0; i < 9; ++i)
+					if (specificCandidates[i].test(nodeId))
+						c[numCandidats++] = i;
+
+				return { c[0], c[1] };
+			};
+
+
+			struct MyPair {
+				u8 nodeId;
+				u8 candidateId;
+				u8 hingeId;
+			};
+
+			auto findPinnedPairs = [](SudokuContext& p, const u8 rootNodeId, const BitBoard& possibilities, u8 whereC1, u8 whereC2) {
+				std::vector<MyPair> pairs;
+				assert(whereC1 != whereC2);
+				assert(whereC1 < 9);
+				assert(whereC2 < 9);
+
+				BitBoard c1Board = p.AllCandidates[whereC1];
+				BitBoard c2Board = p.AllCandidates[whereC2];
+				c1Board.clearBit(rootNodeId);
+				c2Board.clearBit(rootNodeId);
+
+				const uint rowId = BoardUtils::RowForNodeId(rootNodeId);
+				const uint colId = BoardUtils::ColumnForNodeId(rootNodeId);
+				const uint blockId = BoardUtils::BlockForNodeId(rootNodeId);
+
+				BitBoard c1Boards[3] = {
+					c1Board & BoardBits::BitRow(rowId),
+					c1Board & BoardBits::BitColumn(colId), 
+					c1Board & BoardBits::BitBlock(blockId), 
+				};
+
+				BitBoard c2Boards[3] = {
+					c2Board & BoardBits::BitRow(rowId),
+					c2Board & BoardBits::BitColumn(colId),
+					c2Board & BoardBits::BitBlock(blockId)
+				};
+
+				for (uint i = 0; i < 3; ++i) {
+					if (c1Boards[i].countSetBits() == 1) {
+						const u8 pairNodeId = c1Boards[i].firstOne();
+						const bool isC1 = c1Board.test(pairNodeId);
+						const bool isC2 = c2Board.test(pairNodeId);
+						if (isC1 != isC2) {
+							const u8 candidateId = whereC1;
+							pairs.push_back(MyPair{ pairNodeId, candidateId, rootNodeId });
+						}
+					}
+					if (c2Boards[i].countSetBits() == 1) {
+						const u8 pairNodeId = c2Boards[i].firstOne();
+						const bool isC1 = c1Board.test(pairNodeId);
+						const bool isC2 = c2Board.test(pairNodeId);
+						if (isC1 != isC2) {
+							const u8 candidateId = whereC2;
+							pairs.push_back(MyPair{ pairNodeId, candidateId, rootNodeId });
+						}
+					}
+				}
+
+				return pairs;
+			};
+
+			const u8 numNodes = nodesWithExactly2Candidates.countSetBits();
+			if (numNodes >= 3) {
+				u8 nodes[81];
+				const u8 numNodes = nodesWithExactly2Candidates.fillSetBits(nodes);
+				for (uint i = 0; i < numNodes; ++i) {
+					const u8 bit = nodes[i];
+					auto candidates = getMy2Candidates(specificCandidates, bit);
+					auto pairs = findPinnedPairs(p, bit, nodesWithExactly2Candidates, candidates.c1, candidates.c2);
+					if (pairs.size() >= 2) {
+						// pairs might be something similar to: 
+						//	+ [0]{ nodeId = 0 '\0' candidateId = 3 '\x3' }	dd::techniques::yWing::__l2::MyPair
+						//	+ [1]{ nodeId = 16 '\x10' candidateId = 3 '\x3' }	dd::techniques::yWing::__l2::MyPair
+						//	+ [2]{ nodeId = 16 '\x10' candidateId = 3 '\x3' }	dd::techniques::yWing::__l2::MyPair
+						//	+ [3]{ nodeId = 4 '\x4' candidateId = 8 '\b' }	dd::techniques::yWing::__l2::MyPair
+						//	+ [4]{ nodeId = 34 '\"' candidateId = 8 '\b' }	dd::techniques::yWing::__l2::MyPair
+						//	+ [5]{ nodeId = 26 '\x1a' candidateId = 8 '\b' }	dd::techniques::yWing::__l2::MyPair
+						
+						// here comes the fun part: if two PAIR with different candidates from the above list, share a node
+						// if that node happen to share a candidate shared by pair... it can be removed
+						// so, we have found out that our node shares candidate with other nodes 49 -> 45 & 59,
+						// now we need to figure out if node seen by "pair" share another candidate in our scenario if (5) is shared by common neighbour from our pair
+
+						int apa = 0;
+					}
+				}
+			}
+
+			return p.result.size() > 0;
+		}
+
 		using TechniqueFunction = std::function<bool(SudokuContext& p)>;
 		std::vector<TechniqueFunction> allTechniques() {
 			std::vector<TechniqueFunction> out = {
@@ -775,7 +899,7 @@ namespace dd
 				removeNakedQuad, removeHiddenQuad,
 				pointingPair,
 				boxLineReduction,
-				xWing
+				xWing, yWing
 			};
 			return out;
 		}
