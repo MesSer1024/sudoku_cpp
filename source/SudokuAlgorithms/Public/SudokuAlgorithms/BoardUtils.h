@@ -238,10 +238,48 @@ namespace dd
 			return out;
 		}
 
+		u8 rowToDimension(u32 i) { return static_cast<u8>(i); }
+		u8 colToDimension(u32 i) { return static_cast<u8>(i + 9u); }
+		u8 blockToDimension(u32 i) { return static_cast<u8>(i + 18u); }
+
+		struct CandidatesInDimensionBoard {
+			BitBoard board;
+			u8 numNodes;
+			u8 dimensionId;
+			u8 candidateId;
+			u8 nodes[9];
+		};
+
+		using CandidateBoards9 = std::array<CandidatesInDimensionBoard, 9>; // for instance all different rows
+
+		CandidateBoards9 buildAllRowsForCandidate(SudokuContext& p, u8 candidateId) {
+			CandidateBoards9 out;
+			for (u8 i = 0; i < 9; ++i) {
+				CandidatesInDimensionBoard& ref = out[i];
+				ref.board = p.AllCandidates[candidateId] & BoardBits::BitRow(i);
+				ref.candidateId = candidateId;
+				ref.dimensionId = rowToDimension(i);
+				ref.numNodes = ref.board.fillSetBits(ref.nodes);
+			}
+			return out;
+		}
+
+		CandidateBoards9 buildAllColumnsForCandidate(SudokuContext& p, u8 candidateId) {
+			CandidateBoards9 out;
+			for (u8 i = 0; i < 9; ++i) {
+				CandidatesInDimensionBoard& ref = out[i];
+				ref.board = p.AllCandidates[candidateId] & BoardBits::BitColumn(i);
+				ref.candidateId = candidateId;
+				ref.dimensionId = colToDimension(i);
+				ref.numNodes = ref.board.fillSetBits(ref.nodes);
+			}
+			return out;
+		}
+
 		bool sharesBlock(u8& outBlockId, const BitBoard& nodes) {
 			for (uint i = 0; i < 9; ++i) {
-				const BitBoard inBlock = BitBlock(i) & nodes;
-				if (inBlock == nodes) {
+				const BitBoard inDimension = BitBlock(i) & nodes;
+				if (inDimension == nodes) {
 					outBlockId = static_cast<u8>(i);
 					return true;
 				}
@@ -251,8 +289,8 @@ namespace dd
 
 		bool sharesColumn(u8& outColumnId, const BitBoard& nodes) {
 			for (uint i = 0; i < 9; ++i) {
-				const BitBoard inBlock = BitColumn(i) & nodes;
-				if (inBlock == nodes) {
+				const BitBoard inDimension = BitColumn(i) & nodes;
+				if (inDimension == nodes) {
 					outColumnId = static_cast<u8>(i);
 					return true;
 				}
@@ -262,8 +300,8 @@ namespace dd
 
 		bool sharesRow(u8& outRowId, const BitBoard& nodes) {
 			for (uint i = 0; i < 9; ++i) {
-				const BitBoard inBlock = BitRow(i) & nodes;
-				if (inBlock == nodes) {
+				const BitBoard inDimension = BitRow(i) & nodes;
+				if (inDimension == nodes) {
 					outRowId = static_cast<u8>(i);
 					return true;
 				}
@@ -387,5 +425,6 @@ namespace dd
 		return 0;
 	}
 
-	
+	using CandidateBoard = BoardBits::CandidatesInDimensionBoard;
+	using CandidateBoards9 = BoardBits::CandidateBoards9;
 }

@@ -628,153 +628,130 @@ namespace dd
 			uint candidateId;
 		};
 
-		struct XwingPotential {
-			u8 candidateId;
-			u8 dimensionId;
-			BitBoard board;
+		template<typename Output, class Collection, typename WhereClause>
+		u8 SelectWhere(Output* out, const Collection& ref, WhereClause func)
+		{
+			using iterator_type = Collection::const_iterator;
+			using collection_type = CandidateBoard;
+
+			u8 numHits = 0;
+			iterator_type begin = std::begin(ref);
+			const iterator_type end = std::end(ref);
+
+			while (begin != end) {
+				const collection_type& board = *begin;
+				if (func(board))
+					out[numHits++] = board;
+				begin++;
+			}
+
+			return numHits;
+		}
+
+		struct RectangleQueryResult {
+			bool success{ false };
+			u8 trialId1;
+			u8 trialId2;
 		};
 
-		uint fillXwingCombo(XwingCombination* xwings, const XwingPotential* potentials, u8 first, u8 end)
-		{
-			auto getDir = [](u8 dimension) {
-				if (dimension / 9 == 0)
-					return 0; // row
-				if (dimension / 9 == 1)
-					return 1; // column
-				return 2; // block
-			};
+		RectangleQueryResult canFormRectangle(const BitBoard& dimension1, const CandidateBoards9& trialsOtherDimension) {
+			assert(dimension1.countSetBits() == 4u);
+			const u8 end = static_cast<u8>(trialsOtherDimension.size());
+			for (u8 i = 0; i < end; ++i) {
+				if (trialsOtherDimension[i].numNodes < 2)
+					continue;
+				for (u8 j = i + 1; j < end; ++j) {
+					if (trialsOtherDimension[j].numNodes < 2)
+						continue;
 
-			auto getOtherDimension = [getDir](u8 dimensionId) -> BitBoard {
-				const uint dir = getDir(dimensionId);
-				if (dir == 0)
-					return BoardBits::BitRow(dimensionId);
-				else
-					return BoardBits::BitColumn(dimensionId - 9);
-			};
-
-			u32 numCombinations = 0;
-
-			const u8 ExpectedDirection = getDir(potentials[first].dimensionId);
-			const bool rowBasedPotential = ExpectedDirection == 0u;
-#ifdef DD_DEBUG
-			for (uint i = first; i < end; ++i) {
-				const u8 otherDir = getDir(potentials[i].dimensionId);
-				if(otherDir != ExpectedDirection)
-					assert(false);
-			}
-#endif
-			for (uint i = first; i < end; ++i) {
-				for (uint j = i + 1; j < end; ++j) {
-					// foreach combination in row::
-					// check if both nodes in both rows share the same column
-					// combine boards of row1 | row2, mask with all columns? same size as before
-
-					const BitBoard dimensionMerged = potentials[i].board | potentials[j].board;
-#ifdef DD_DEBUG
-					assert(dimensionMerged.countSetBits() == 4u);
-#endif
-					uint hitsInOtherDirection = 0;
-					uint others[9];
-					for (uint dirId = 0; dirId < 9; ++dirId) {
-						const BitBoard otherDimension = dimensionMerged & (rowBasedPotential ? BoardBits::BitColumn(dirId) : BoardBits::BitRow(dirId));
-						const u8 numOtherDimension = otherDimension.countSetBits();
-//#error this is incorrect assumption, I think the correct bheeavior here must be to validate if they form a rectangle..., or rather if iterating all in "other dimension" if they have exactly 2 occurances with 2 matches
-						// since we are merging two rows[or columns] each containing exactly two candidates, we want to validate that when going in other direction, count is 2
-						if (numOtherDimension == 2u)
-						{
-							others[hitsInOtherDirection++] = dirId;
-						}
-					}
-
-					if (hitsInOtherDirection == 2u) {
-
-//# error cleanup this, this is the right assumption, need to figure out in what dir the "nodes" should be in order to make sense in next step....
-						{
-							uint dirId = others[0];
-							const BitBoard otherDimension1 = dimensionMerged & (rowBasedPotential ? BoardBits::BitColumn(dirId) : BoardBits::BitRow(dirId));
-							XwingCombination& x = xwings[numCombinations++];
-							u8 nodes[9];
-							u8 numCount = otherDimension1.fillSetBits(nodes);
-							assert(numCount == 2u);
-							x.node1 = nodes[0];
-							x.node2 = nodes[1];
-							x.dimensionId_potentiallyMoreCandidates = rowBasedPotential ? dirId + 9u : dirId; // reverse the outgoing ?
-							x.candidateId = potentials[i].candidateId;
-						}
-
-						{
-							uint dirId = others[1];
-							const BitBoard otherDimension1 = dimensionMerged & (rowBasedPotential ? BoardBits::BitColumn(dirId) : BoardBits::BitRow(dirId));
-							XwingCombination& x = xwings[numCombinations++];
-							u8 nodes[9];
-							u8 numCount = otherDimension1.fillSetBits(nodes);
-							assert(numCount == 2u); 
-							x.node1 = nodes[0];
-							x.node2 = nodes[1];
-							x.dimensionId_potentiallyMoreCandidates = rowBasedPotential ? dirId + 9u : dirId; // reverse the outgoing ?
-							x.candidateId = potentials[i].candidateId;
-						}
-					}
-					if (hitsInOtherDirection > 2u) {
-						assert(false); // it this something I should handle? Feels like it is something that is a match for algorithm
+					const BitBoard mergedTrials = trialsOtherDimension[i].board | trialsOtherDimension[j].board;
+					const BitBoard merged = dimension1 & mergedTrials;
+					const u8 numMerged = merged.countSetBits();
+					if (numMerged >= 4u) {
+						return RectangleQueryResult{ true, i, j };
 					}
 				}
 			}
-			return numCombinations;
+			return RectangleQueryResult{};
 		}
 
 		bool xWing(SudokuContext& p) {
 			p.result.Technique = Techniques::X_Wing;
 
 			//When there are only two possible cells for a value in each of two different rows,
-			//	and these candidates lie also in the same columns,
+			//	and these candidates lie also in the same columns, (forms rectangle)
 			//	then all other candidates for this value in the columns can be eliminated.
 			//		or cells -> rows
 
-
 			XwingCombination xwings[100];
-			XwingPotential potentials[100];
 			uint numXwings = 0;
+
+			// #todo : fix
+			auto buildXwing = [](XwingCombination* xwings, RectangleQueryResult result, const BitBoard& mergedBoard, CandidateBoards9& cols) {
+				u8 nodes[9];
+
+				XwingCombination& xwing1 = xwings[0];
+				xwing1.candidateId = cols[result.trialId1].candidateId;
+				xwing1.dimensionId_potentiallyMoreCandidates = cols[result.trialId1].dimensionId; // #todo : fix
+				const BitBoard foo1 = mergedBoard & cols[result.trialId1].board;
+				assert(foo1.fillSetBits(nodes) == 2u);
+				xwing1.node1 = nodes[0];
+				xwing1.node2 = nodes[1];
+
+				XwingCombination& xwing2 = xwings[1];
+				xwing2.candidateId = cols[result.trialId2].candidateId;
+				xwing2.dimensionId_potentiallyMoreCandidates = cols[result.trialId2].dimensionId; // #todo : fix
+				const BitBoard foo2 = mergedBoard & cols[result.trialId2].board;
+				assert(foo2.fillSetBits(nodes) == 2u);
+				xwing2.node1 = nodes[0];
+				xwing2.node2 = nodes[1];
+			};
 
 			// check for strict candiates over all rows and columns
 			for (u8 c = 0; c < 9; ++c) {
-				u8 numPotentials = 0;
 				const BitBoard& candidates = p.AllCandidates[c];
-				const u8 rowStart = numPotentials;
+				u8 numPotentials = 0;
 
-				for (u8 i = 0; i < 9; ++i) {
-					const BitBoard inRow = candidates & BoardBits::BitRow(i);
-					const u8 numNodesInRow = inRow.countSetBits();
-					if (numNodesInRow == 2) {
-						XwingPotential& match = potentials[numPotentials++];
-						match.board = inRow;
-						match.candidateId = c;
-						match.dimensionId = i;
+				CandidateBoards9 rows = BoardBits::buildAllRowsForCandidate(p, c);
+				CandidateBoards9 cols = BoardBits::buildAllColumnsForCandidate(p, c);
+
+				// foreach row_combo_2_rows --> check if they share same columns [can form rectangle with 2 other columns]
+				// if rectangle can be formed, then all other nodes with that candidate IN_COLUMNS can be removed (except the nodes used to form rectangle)
+				{
+					CandidateBoard subsetRow[9];
+					const u8 numSubsetBoards = SelectWhere(subsetRow, rows, [](const CandidateBoard& b) {return b.numNodes == 2u; });
+					if (numSubsetBoards >= 2) {
+						for (uint i = 0; i < numSubsetBoards; ++i) {
+							for (uint j = i+1; j < numSubsetBoards; ++j) {
+								const BitBoard mergedBoard = subsetRow[i].board | subsetRow[j].board;
+								RectangleQueryResult result = canFormRectangle(mergedBoard, cols);
+								if (result.success) {
+									buildXwing(&xwings[numXwings], result, mergedBoard, cols);
+									numXwings += 2;
+								}
+							}
+						}
+
 					}
 				}
+				// check for columns -> rows
+				{
+					CandidateBoard subsetCols[9];
+					const u8 numSubsetBoards = SelectWhere(subsetCols, cols, [](const CandidateBoard& b) {return b.numNodes == 2u; });
+					if (numSubsetBoards >= 2) {
+						for (uint i = 0; i < numSubsetBoards; ++i) {
+							for (uint j = i + 1; j < numSubsetBoards; ++j) {
+								const BitBoard mergedBoard = subsetCols[i].board | subsetCols[j].board;
+								RectangleQueryResult result = canFormRectangle(mergedBoard, rows);
+								if (result.success) {
+									buildXwing(&xwings[numXwings], result, mergedBoard, rows);
+									numXwings += 2;
+								}
+							}
+						}
 
-				const u8 rowEnd = numPotentials;
-				const u8 colStart = numPotentials;
-
-				for (u8 i = 0; i < 9; ++i) {
-					const BitBoard inColumn = candidates & BoardBits::BitColumn(i);
-					const u8 numNodesInColumn = inColumn.countSetBits();
-					if (numNodesInColumn == 2) {
-						XwingPotential& match = potentials[numPotentials++];
-						match.board = inColumn;
-						match.candidateId = c;
-						match.dimensionId = i + 9;
 					}
 				}
-
-				const u8 colEnd = numPotentials;
-				// need to figure out if any two different rows share the same columns
-
-				if(rowEnd - rowStart >= 2)
-					numXwings += fillXwingCombo(xwings + numXwings, potentials, rowStart, rowEnd);
-
-				if (colEnd - colStart >= 2)
-					numXwings += fillXwingCombo(xwings + numXwings, potentials, colStart, colEnd);
 			}
 
 			// APPLY TECHNIQUE
