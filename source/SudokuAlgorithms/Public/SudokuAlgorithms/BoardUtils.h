@@ -45,6 +45,10 @@ namespace dd
 		return static_cast<u8>(__popcnt16(mask));
 	}
 
+	u16 candidateIdToMask(u8 candidateId) {
+		u16 candidateMask = 1 << (candidateId + 1);
+		return candidateMask;
+	}
 
 	constexpr u16 topLeftFromblockId(uint blockId)
 	{
@@ -54,8 +58,6 @@ namespace dd
 			static_cast<u16>(27 * rOffset +
 				3 * cOffset);
 	}
-
-
 
 	namespace BoardBits
 	{
@@ -192,6 +194,16 @@ namespace dd
 			sharedNeighbours.clearBit(node2);
 
 			return sharedNeighbours;
+		}
+
+		SudokuBitBoard SharedSeenNodes(u8* nodes, u8 numNodes) {
+			BitBoard combined(BitBoard::All{});
+
+			for (uint i = 0; i < numNodes; ++i) {
+				combined &= NeighboursForNodeCombined(nodes[i]);
+			}
+
+			return combined;
 		}
 
 		SudokuBitBoard SharedNeighborsClearSelf(const u8* nodes, u8 count) {

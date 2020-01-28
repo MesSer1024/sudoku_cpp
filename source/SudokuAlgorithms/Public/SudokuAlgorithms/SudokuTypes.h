@@ -72,6 +72,15 @@ namespace dd
 		bool notEmpty() const { return bits.all == 0; }
 		bool isSolved() const { return bits.solved; }
 		ValueType getCandidates() const { return bits.candidates; }
+		u8 fillCandidateIds(u8* candidateIds) {
+			u8 numCandidates = 0;
+			u16 candidates = bits.candidates;
+			for (u8 i = 0; i < 9; ++i) {
+				if (candidates & AllCandidatesArray[i])
+					candidateIds[numCandidates++] = i;
+			}
+			return numCandidates;
+		}
 
 		ValueType getValue() const { return bits.value; }
 

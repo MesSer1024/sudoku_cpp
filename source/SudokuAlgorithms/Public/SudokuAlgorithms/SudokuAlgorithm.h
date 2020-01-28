@@ -656,7 +656,7 @@ namespace dd
 			//operator bool() { return success; }
 		};
 
-		RectangleQueryResult canFormRectangle(const BitBoard& dimension1, const CandidateBoards9& trialsOtherDimension) {
+		RectangleQueryResult canTwoUnitsFormRectangleTwoUnitsOtherDimension(const BitBoard& dimension1, const CandidateBoards9& trialsOtherDimension) {
 			assert(dimension1.countSetBits() == 4u);
 			const u8 end = static_cast<u8>(trialsOtherDimension.size());
 			for (u8 i = 0; i < end; ++i) {
@@ -691,7 +691,7 @@ namespace dd
 				for (uint i = 0; i < numBoards; ++i) {
 					for (uint j = i + 1; j < numBoards; ++j) {
 						const BitBoard mergedBoard = boards[i].board | boards[j].board;
-						out[numRectangles] = canFormRectangle(mergedBoard, lookup);
+						out[numRectangles] = canTwoUnitsFormRectangleTwoUnitsOtherDimension(mergedBoard, lookup);
 
 						if (out[numRectangles].success) {
 							numRectangles++;
@@ -777,7 +777,13 @@ namespace dd
 
 			// one solution would be to check for all nodes that have exactly two candidates
 			// then take all combination of those nodes and see if they can form a y-wing pattern
+			struct YWingCombination {
+				BitBoard affectedNodes;
+				u8 candidateId;
+			};
 
+			YWingCombination ywings[100];
+			u8 numYwings = 0;
 
 			const BitBoard nodesWithExactly2Candidates = BoardUtils::boardWhereCandidateCountInRange(p, 2, 2);
 			BitBoard specificCandidates[9];
@@ -787,105 +793,71 @@ namespace dd
 				numSpecificCandidates[i] = specificCandidates[i].countSetBits();
 			}
 
-			struct MyCandidates {
-				u8 c1;
-				u8 c2;
-			};
-			auto getMy2Candidates = [](BitBoard* specificCandidates, u8 nodeId) -> MyCandidates {
-				u8 c[2];
-				u8 numCandidats = 0;
-				for (u8 i = 0; i < 9; ++i)
-					if (specificCandidates[i].test(nodeId))
-						c[numCandidats++] = i;
-
-				return { c[0], c[1] };
-			};
-
-
-			struct MyPair {
-				u8 nodeId;
-				u8 candidateId;
-				u8 hingeId;
-			};
-
-			auto findPinnedPairs = [](SudokuContext& p, const u8 rootNodeId, const BitBoard& possibilities, u8 whereC1, u8 whereC2) {
-				std::vector<MyPair> pairs;
-				assert(whereC1 != whereC2);
-				assert(whereC1 < 9);
-				assert(whereC2 < 9);
-
-				BitBoard c1Board = p.AllCandidates[whereC1];
-				BitBoard c2Board = p.AllCandidates[whereC2];
-				c1Board.clearBit(rootNodeId);
-				c2Board.clearBit(rootNodeId);
-
-				const uint rowId = BoardUtils::RowForNodeId(rootNodeId);
-				const uint colId = BoardUtils::ColumnForNodeId(rootNodeId);
-				const uint blockId = BoardUtils::BlockForNodeId(rootNodeId);
-
-				BitBoard c1Boards[3] = {
-					c1Board & BoardBits::BitRow(rowId),
-					c1Board & BoardBits::BitColumn(colId), 
-					c1Board & BoardBits::BitBlock(blockId), 
-				};
-
-				BitBoard c2Boards[3] = {
-					c2Board & BoardBits::BitRow(rowId),
-					c2Board & BoardBits::BitColumn(colId),
-					c2Board & BoardBits::BitBlock(blockId)
-				};
-
-				for (uint i = 0; i < 3; ++i) {
-					if (c1Boards[i].countSetBits() == 1) {
-						const u8 pairNodeId = c1Boards[i].firstOne();
-						const bool isC1 = c1Board.test(pairNodeId);
-						const bool isC2 = c2Board.test(pairNodeId);
-						if (isC1 != isC2) {
-							const u8 candidateId = whereC1;
-							pairs.push_back(MyPair{ pairNodeId, candidateId, rootNodeId });
-						}
-					}
-					if (c2Boards[i].countSetBits() == 1) {
-						const u8 pairNodeId = c2Boards[i].firstOne();
-						const bool isC1 = c1Board.test(pairNodeId);
-						const bool isC2 = c2Board.test(pairNodeId);
-						if (isC1 != isC2) {
-							const u8 candidateId = whereC2;
-							pairs.push_back(MyPair{ pairNodeId, candidateId, rootNodeId });
-						}
-					}
-				}
-
-				return pairs;
-			};
-
 			const u8 numNodes = nodesWithExactly2Candidates.countSetBits();
 			if (numNodes >= 3) {
 				u8 nodes[81];
 				const u8 numNodes = nodesWithExactly2Candidates.fillSetBits(nodes);
+				
 				for (uint i = 0; i < numNodes; ++i) {
 					const u8 bit = nodes[i];
-					auto candidates = getMy2Candidates(specificCandidates, bit);
-					auto pairs = findPinnedPairs(p, bit, nodesWithExactly2Candidates, candidates.c1, candidates.c2);
-					if (pairs.size() >= 2) {
-						// pairs might be something similar to: 
-						//	+ [0]{ nodeId = 0 '\0' candidateId = 3 '\x3' }	dd::techniques::yWing::__l2::MyPair
-						//	+ [1]{ nodeId = 16 '\x10' candidateId = 3 '\x3' }	dd::techniques::yWing::__l2::MyPair
-						//	+ [2]{ nodeId = 16 '\x10' candidateId = 3 '\x3' }	dd::techniques::yWing::__l2::MyPair
-						//	+ [3]{ nodeId = 4 '\x4' candidateId = 8 '\b' }	dd::techniques::yWing::__l2::MyPair
-						//	+ [4]{ nodeId = 34 '\"' candidateId = 8 '\b' }	dd::techniques::yWing::__l2::MyPair
-						//	+ [5]{ nodeId = 26 '\x1a' candidateId = 8 '\b' }	dd::techniques::yWing::__l2::MyPair
-						
-						// here comes the fun part: if two PAIR with different candidates from the above list, share a node
-						// if that node happen to share a candidate shared by pair... it can be removed
-						// so, we have found out that our node shares candidate with other nodes 49 -> 45 & 59,
-						// now we need to figure out if node seen by "pair" share another candidate in our scenario if (5) is shared by common neighbour from our pair
+					u8 candidates[2];
+					const u8 numCandidates = p.b.Nodes[bit].fillCandidateIds(candidates);
+					assert(numCandidates == 2);
 
-						int apa = 0;
+					const BitBoard neighboursWith2Candidates = BoardBits::NeighboursForNodeCombined(bit) & nodesWithExactly2Candidates;
+					BitBoard neighboursWithC1 = neighboursWith2Candidates & p.AllCandidates[candidates[0]];
+					BitBoard neighboursWithC2 = neighboursWith2Candidates & p.AllCandidates[candidates[1]];
+					const BitBoard invalidNodes = neighboursWithC1 & neighboursWithC2;
+					neighboursWithC1 ^= invalidNodes;
+					neighboursWithC2 ^= invalidNodes;
+
+					//////////////////////////////////
+					u8 c1Nodes[9];
+					u8 c2Nodes[9];
+					const u8 numC1 = neighboursWithC1.fillSetBits(c1Nodes);
+					const u8 numC2 = neighboursWithC2.fillSetBits(c2Nodes);
+
+					u8 nodes[3];
+					if (numC1 > 0 && numC2 > 0) {
+						for (u8 i = 0; i < numC1; ++i) {
+							for (u8 j = 0; j < numC2; ++j) {
+								nodes[0] = bit;
+								nodes[1] = c1Nodes[i];
+								nodes[2] = c2Nodes[j];
+								assert(nodes[0] != nodes[1]);
+								assert(nodes[0] != nodes[2]);
+								assert(nodes[1] != nodes[2]);
+
+								const u16 candidateMask = BoardUtils::mergeCandidateMasks(p, nodes, 3);
+								const u8 numCandidates = countCandidates(candidateMask);
+								if (numCandidates == 3) {
+									const u16 removed = candidateIdToMask(candidates[0]) | candidateIdToMask(candidates[1]);
+									const u16 oneCandidate = candidateMask ^ removed;
+									assert(countCandidates(oneCandidate) == 1);
+									const u8 searchedCandidateId = static_cast<u8>(getOnlyCandidateFromMask(oneCandidate) - 1);
+
+									const BitBoard allSeenNodes = BoardBits::SharedSeenNodes(&nodes[1], 2); // take the 2 other nodes (except the one I was iterating over
+									const BitBoard seenWithCandidateAndPotential = allSeenNodes & p.AllCandidates[searchedCandidateId] & nodesWithExactly2Candidates;
+									if (seenWithCandidateAndPotential.notEmpty()) {
+										YWingCombination& ywing = ywings[numYwings++];
+										ywing.affectedNodes = seenWithCandidateAndPotential;
+										ywing.candidateId = searchedCandidateId;
+									}
+								}
+							}
+						}
 					}
 				}
 			}
 
+			for (uint i = 0; i < numYwings; ++i) {
+				YWingCombination& ywing = ywings[i];
+				p.result.storePreModification(p.b.Nodes, ywing.affectedNodes);
+
+				ywing.affectedNodes.foreachSetBit([&p, &ywing](u32 bit) {
+					p.b.Nodes[bit].candidatesRemoveSingle(ywing.candidateId + 1);
+				});
+			}
 			return p.result.size() > 0;
 		}
 
