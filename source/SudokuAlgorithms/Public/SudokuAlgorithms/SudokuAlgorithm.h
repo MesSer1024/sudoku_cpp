@@ -796,7 +796,7 @@ namespace dd
 			const u8 numNodes = nodesWithExactly2Candidates.countSetBits();
 			if (numNodes >= 3) {
 				u8 nodes[81];
-				const u8 numNodes = nodesWithExactly2Candidates.fillSetBits(nodes);
+				assert(nodesWithExactly2Candidates.fillSetBits(nodes) == numNodes);
 				
 				for (uint i = 0; i < numNodes; ++i) {
 					const u8 bit = nodes[i];
@@ -837,7 +837,7 @@ namespace dd
 									const u8 searchedCandidateId = static_cast<u8>(getOnlyCandidateFromMask(oneCandidate) - 1);
 
 									const BitBoard allSeenNodes = BoardBits::SharedSeenNodes(&nodes[1], 2); // take the 2 other nodes (except the one I was iterating over
-									const BitBoard seenWithCandidateAndPotential = allSeenNodes & p.AllCandidates[searchedCandidateId] & nodesWithExactly2Candidates;
+									const BitBoard seenWithCandidateAndPotential = allSeenNodes & p.AllCandidates[searchedCandidateId];
 									if (seenWithCandidateAndPotential.notEmpty()) {
 										YWingCombination& ywing = ywings[numYwings++];
 										ywing.affectedNodes = seenWithCandidateAndPotential;
