@@ -622,10 +622,9 @@ namespace dd
 		}
 
 		struct XwingCombination {
-			uint node1;
-			uint node2;
-			uint dimensionId_potentiallyMoreCandidates;
-			uint candidateId;
+			BitBoard AffectedNodes;
+			BitBoard RectangleNodes;
+			u8 candidateId;
 		};
 
 		template<typename Output, class Collection, typename WhereClause>
@@ -652,6 +651,9 @@ namespace dd
 			bool success{ false };
 			u8 trialId1;
 			u8 trialId2;
+			BitBoard rectangle;
+
+			//operator bool() { return success; }
 		};
 
 		RectangleQueryResult canFormRectangle(const BitBoard& dimension1, const CandidateBoards9& trialsOtherDimension) {
@@ -667,8 +669,8 @@ namespace dd
 					const BitBoard mergedTrials = trialsOtherDimension[i].board | trialsOtherDimension[j].board;
 					const BitBoard merged = dimension1 & mergedTrials;
 					const u8 numMerged = merged.countSetBits();
-					if (numMerged >= 4u) {
-						return RectangleQueryResult{ true, i, j };
+					if (numMerged == 4u) {
+						return RectangleQueryResult{ true, i, j, merged };
 					}
 				}
 			}
@@ -685,27 +687,6 @@ namespace dd
 
 			XwingCombination xwings[100];
 			uint numXwings = 0;
-
-			// #todo : fix
-			auto buildXwing = [](XwingCombination* xwings, RectangleQueryResult result, const BitBoard& mergedBoard, CandidateBoards9& cols) {
-				u8 nodes[9];
-
-				XwingCombination& xwing1 = xwings[0];
-				xwing1.candidateId = cols[result.trialId1].candidateId;
-				xwing1.dimensionId_potentiallyMoreCandidates = cols[result.trialId1].dimensionId; // #todo : fix
-				const BitBoard foo1 = mergedBoard & cols[result.trialId1].board;
-				assert(foo1.fillSetBits(nodes) == 2u);
-				xwing1.node1 = nodes[0];
-				xwing1.node2 = nodes[1];
-
-				XwingCombination& xwing2 = xwings[1];
-				xwing2.candidateId = cols[result.trialId2].candidateId;
-				xwing2.dimensionId_potentiallyMoreCandidates = cols[result.trialId2].dimensionId; // #todo : fix
-				const BitBoard foo2 = mergedBoard & cols[result.trialId2].board;
-				assert(foo2.fillSetBits(nodes) == 2u);
-				xwing2.node1 = nodes[0];
-				xwing2.node2 = nodes[1];
-			};
 
 			// check for strict candiates over all rows and columns
 			for (u8 c = 0; c < 9; ++c) {
@@ -724,10 +705,13 @@ namespace dd
 						for (uint i = 0; i < numSubsetBoards; ++i) {
 							for (uint j = i+1; j < numSubsetBoards; ++j) {
 								const BitBoard mergedBoard = subsetRow[i].board | subsetRow[j].board;
-								RectangleQueryResult result = canFormRectangle(mergedBoard, cols);
-								if (result.success) {
-									buildXwing(&xwings[numXwings], result, mergedBoard, cols);
-									numXwings += 2;
+								RectangleQueryResult query = canFormRectangle(mergedBoard, cols);
+								
+								if (query.success) {
+									XwingCombination& xwing = xwings[numXwings++];
+									xwing.AffectedNodes = (cols[query.trialId1].board | cols[query.trialId2].board);
+									xwing.RectangleNodes = query.rectangle;
+									xwing.candidateId = cols[query.trialId1].candidateId;
 								}
 							}
 						}
@@ -742,10 +726,14 @@ namespace dd
 						for (uint i = 0; i < numSubsetBoards; ++i) {
 							for (uint j = i + 1; j < numSubsetBoards; ++j) {
 								const BitBoard mergedBoard = subsetCols[i].board | subsetCols[j].board;
-								RectangleQueryResult result = canFormRectangle(mergedBoard, rows);
-								if (result.success) {
-									buildXwing(&xwings[numXwings], result, mergedBoard, rows);
-									numXwings += 2;
+								
+								RectangleQueryResult query = canFormRectangle(mergedBoard, rows);
+
+								if (query.success) {
+									XwingCombination& xwing = xwings[numXwings++];
+									xwing.AffectedNodes = (rows[query.trialId1].board | rows[query.trialId2].board);
+									xwing.RectangleNodes = query.rectangle;
+									xwing.candidateId = rows[query.trialId1].candidateId;
 								}
 							}
 						}
@@ -755,24 +743,20 @@ namespace dd
 			}
 
 			// APPLY TECHNIQUE
+			// fetch all candidates for the "potential"
+			// remove "the nodes part of rectangle" from board
+			// all other nodes where that canidate is present (known_already) should be removed
+
 			for (uint i = 0; i < numXwings; ++i) {
 				const XwingCombination& xwing = xwings[i];
-				const BitBoard candidates = p.AllCandidates[xwing.candidateId];
-				BitBoard inDimension;
-				if (xwing.dimensionId_potentiallyMoreCandidates < 9)
-					inDimension = candidates & BoardBits::BitRow(xwing.dimensionId_potentiallyMoreCandidates);
-				else
-					inDimension = candidates & BoardBits::BitColumn(xwing.dimensionId_potentiallyMoreCandidates - 9);
-				if (inDimension.countSetBits() > 2) {
+				const BitBoard nodes = xwing.AffectedNodes ^ xwing.RectangleNodes;
+				assert(xwing.AffectedNodes.countSetBits() - nodes.countSetBits() == 4u);
 
-					assert(inDimension.test(xwing.node1));
-					assert(inDimension.test(xwing.node2));
-					inDimension.clearBit(xwing.node1);
-					inDimension.clearBit(xwing.node2);
+				if (nodes.countSetBits() > 0) {
+					p.result.storePreModification(p.b.Nodes, nodes);
 
-					inDimension.foreachSetBit([&p, &xwing](u32 bit) {
-						p.result.append(p.b.Nodes[bit], (u8)bit);
-						p.b.Nodes[bit].candidatesRemoveSingle((u8)(xwing.candidateId + 1));
+					nodes.foreachSetBit([&p, &xwing](u32 bit) {
+						p.b.Nodes[bit].candidatesRemoveSingle(xwing.candidateId + 1);
 					});
 				}
 			}
