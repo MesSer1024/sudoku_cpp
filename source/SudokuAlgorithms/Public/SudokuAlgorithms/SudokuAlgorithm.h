@@ -648,7 +648,7 @@ namespace dd
 		}
 
 		struct RectangleQueryResult {
-			bool success{ false };
+			bool success;
 			u8 trialId1;
 			u8 trialId2;
 			BitBoard rectangle;
@@ -685,68 +685,69 @@ namespace dd
 			//	then all other candidates for this value in the columns can be eliminated.
 			//		or cells -> rows
 
+			auto findRectangles = [](RectangleQueryResult* out, const CandidateBoard* boards, u8 numBoards, const CandidateBoards9& lookup) {
+				u8 numRectangles = 0;
+
+				for (uint i = 0; i < numBoards; ++i) {
+					for (uint j = i + 1; j < numBoards; ++j) {
+						const BitBoard mergedBoard = boards[i].board | boards[j].board;
+						out[numRectangles] = canFormRectangle(mergedBoard, lookup);
+
+						if (out[numRectangles].success) {
+							numRectangles++;
+						}
+					}
+				}
+
+				return numRectangles;
+			};
+
+			auto buildCombos = [](XwingCombination* out, const RectangleQueryResult* rectangles, u8 queryCount, const CandidateBoards9& lookup) {
+				u8 numXwings = 0;
+
+				for (uint i = 0; i < queryCount; ++i) {
+					const RectangleQueryResult& query = rectangles[i];
+					XwingCombination& xwing = out[numXwings];
+
+					xwing.AffectedNodes = (lookup[query.trialId1].board | lookup[query.trialId2].board);
+					if (xwing.AffectedNodes.countSetBits() < 4)
+						continue; // don't use items with too few affected nodes
+
+					numXwings++;
+					xwing.RectangleNodes = query.rectangle;
+					xwing.candidateId = lookup[query.trialId1].candidateId;
+				}
+
+				return numXwings;
+			};
+
 			XwingCombination xwings[100];
 			uint numXwings = 0;
 
 			// check for strict candiates over all rows and columns
 			for (u8 c = 0; c < 9; ++c) {
-				const BitBoard& candidates = p.AllCandidates[c];
-				u8 numPotentials = 0;
-
 				CandidateBoards9 rows = BoardBits::buildAllRowsForCandidate(p, c);
 				CandidateBoards9 cols = BoardBits::buildAllColumnsForCandidate(p, c);
+				CandidateBoard subset[9];
+				RectangleQueryResult rectangles[9];
 
 				// foreach row_combo_2_rows --> check if they share same columns [can form rectangle with 2 other columns]
 				// if rectangle can be formed, then all other nodes with that candidate IN_COLUMNS can be removed (except the nodes used to form rectangle)
-				{
-					CandidateBoard subsetRow[9];
-					const u8 numSubsetBoards = SelectWhere(subsetRow, rows, [](const CandidateBoard& b) {return b.numNodes == 2u; });
-					if (numSubsetBoards >= 2) {
-						for (uint i = 0; i < numSubsetBoards; ++i) {
-							for (uint j = i+1; j < numSubsetBoards; ++j) {
-								const BitBoard mergedBoard = subsetRow[i].board | subsetRow[j].board;
-								RectangleQueryResult query = canFormRectangle(mergedBoard, cols);
-								
-								if (query.success) {
-									XwingCombination& xwing = xwings[numXwings++];
-									xwing.AffectedNodes = (cols[query.trialId1].board | cols[query.trialId2].board);
-									xwing.RectangleNodes = query.rectangle;
-									xwing.candidateId = cols[query.trialId1].candidateId;
-								}
-							}
-						}
 
-					}
-				}
-				// check for columns -> rows
-				{
-					CandidateBoard subsetCols[9];
-					const u8 numSubsetBoards = SelectWhere(subsetCols, cols, [](const CandidateBoard& b) {return b.numNodes == 2u; });
-					if (numSubsetBoards >= 2) {
-						for (uint i = 0; i < numSubsetBoards; ++i) {
-							for (uint j = i + 1; j < numSubsetBoards; ++j) {
-								const BitBoard mergedBoard = subsetCols[i].board | subsetCols[j].board;
-								
-								RectangleQueryResult query = canFormRectangle(mergedBoard, rows);
+				// check strict match of rows --> columns
+				if (const u8 numSubsetBoards = SelectWhere(subset, rows, [](const CandidateBoard& b) {return b.numNodes == 2u; }))
+					if (const u8 numRectangles = findRectangles(rectangles, subset, numSubsetBoards, cols))
+						numXwings += buildCombos(&xwings[numXwings], rectangles, numRectangles, cols);
 
-								if (query.success) {
-									XwingCombination& xwing = xwings[numXwings++];
-									xwing.AffectedNodes = (rows[query.trialId1].board | rows[query.trialId2].board);
-									xwing.RectangleNodes = query.rectangle;
-									xwing.candidateId = rows[query.trialId1].candidateId;
-								}
-							}
-						}
-
-					}
-				}
+				// check strict match of columns --> rows
+				if (const u8 numSubsetBoards = SelectWhere(subset, cols, [](const CandidateBoard& b) {return b.numNodes == 2u; }))
+					if (const u8 numRectangles = findRectangles(rectangles, subset, numSubsetBoards, rows))
+						numXwings += buildCombos(&xwings[numXwings], rectangles, numRectangles, rows);
 			}
 
-			// APPLY TECHNIQUE
-			// fetch all candidates for the "potential"
-			// remove "the nodes part of rectangle" from board
-			// all other nodes where that canidate is present (known_already) should be removed
-
+			// APPLY CHANGES
+			// we had a candidate that were forced into a "rectangle position" by for instance only occuring twice in two rows, where the rows also shared columns
+			// any node seeing the rectangle (where the node is not part of rectangle) we can remove the candidate from that node...
 			for (uint i = 0; i < numXwings; ++i) {
 				const XwingCombination& xwing = xwings[i];
 				const BitBoard nodes = xwing.AffectedNodes ^ xwing.RectangleNodes;
