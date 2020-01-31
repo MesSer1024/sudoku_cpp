@@ -164,27 +164,6 @@ namespace dd
 			assert(block.test(46));
 			assert(block.test(47));
 		}
-
-		{
-			BoardBits::BitBoards3 neighbourBitBoards = BoardBits::NeighboursForNode(0);
-			BoardBits::SudokuBitBoard ExpectedRow = BoardBits::BitRow(0);
-			BoardBits::SudokuBitBoard ExpectedColumn = BoardBits::BitColumn(0);
-			BoardBits::SudokuBitBoard ExpectedBlock = BoardBits::BitBlock(0);
-			assert(neighbourBitBoards[0] == ExpectedRow);
-			assert(neighbourBitBoards[1] == ExpectedColumn);
-			assert(neighbourBitBoards[2] == ExpectedBlock);
-		}
-
-		{
-			BoardBits::BitBoards3 neighbourBitBoards = BoardBits::NeighboursForNode(43); // { 4, 7, 5 }
-			BoardBits::SudokuBitBoard ExpectedRow = BoardBits::BitRow(4);
-			BoardBits::SudokuBitBoard ExpectedColumn = BoardBits::BitColumn(7);
-			BoardBits::SudokuBitBoard ExpectedBlock = BoardBits::BitBlock(5);
-			assert(neighbourBitBoards[0] == ExpectedRow);
-			assert(neighbourBitBoards[1] == ExpectedColumn);
-			assert(neighbourBitBoards[2] == ExpectedBlock);
-		}
-
 		{
 			for (uint i = 0; i < BoardSize; ++i)
 			{

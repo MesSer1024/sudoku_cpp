@@ -120,14 +120,6 @@ namespace dd
 			return dimensions;
 		}
 
-		constexpr BitBoards3 NeighboursForNode(uint nodeId) {
-			const uint rowId = BoardUtils::RowForNodeId(nodeId);
-			const uint columnId = BoardUtils::ColumnForNodeId(nodeId);
-			const uint blockId = BoardUtils::BlockForNodeId(nodeId);
-
-			return BitBoards3{ BitRow(rowId) , BitColumn(columnId), BitBlock(blockId) };
-		}
-
 		constexpr BitBoard NeighboursForNodeCombined(uint nodeId) {
 			const uint rowId = BoardUtils::RowForNodeId(nodeId);
 			const uint columnId = BoardUtils::ColumnForNodeId(nodeId);
@@ -136,14 +128,6 @@ namespace dd
 			BitBoard b = BitRow(rowId) | BitColumn(columnId) | BitBlock(blockId);
 			b.clearBit(nodeId);
 			return b;
-		}
-
-		constexpr BitBoards3 NeighboursForNodeClearSelf(uint nodeId) {
-			BitBoards3 boards = NeighboursForNode(nodeId);
-			boards[0].clearBit(nodeId);
-			boards[1].clearBit(nodeId);
-			boards[2].clearBit(nodeId);
-			return boards;
 		}
 
 		SudokuBitBoard SharedNeighborsClearSelf(const u16* nodes, u8 count) {
@@ -196,7 +180,7 @@ namespace dd
 			return sharedNeighbours;
 		}
 
-		SudokuBitBoard SharedSeenNodes(u8* nodes, u8 numNodes) {
+		SudokuBitBoard IntersectedNodes(u8* nodes, u8 numNodes) {
 			BitBoard combined(BitBoard::All{});
 
 			for (uint i = 0; i < numNodes; ++i) {

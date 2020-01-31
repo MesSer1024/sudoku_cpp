@@ -836,7 +836,7 @@ namespace dd
 									assert(countCandidates(oneCandidate) == 1);
 									const u8 searchedCandidateId = static_cast<u8>(getOnlyCandidateFromMask(oneCandidate) - 1);
 
-									const BitBoard allSeenNodes = BoardBits::SharedSeenNodes(&nodes[1], 2); // take the 2 other nodes (except the one I was iterating over
+									const BitBoard allSeenNodes = BoardBits::IntersectedNodes(&nodes[1], 2); // take the 2 other nodes (except the one I was iterating over
 									const BitBoard seenWithCandidateAndPotential = allSeenNodes & p.AllCandidates[searchedCandidateId];
 									if (seenWithCandidateAndPotential.notEmpty()) {
 										YWingCombination& ywing = ywings[numYwings++];
@@ -915,7 +915,7 @@ namespace dd
 			// rule: An Uncolored Candidate can See Two Oppositely-Colored Candidates
 			// If an uncolored candidate is in the same unit as a colored candidate, it can be described as "seeing" that colored candidate.
 
-			for (uint i = 0; i < 9; ++i) {
+			for (u8 i = 0; i < 9; ++i) {
 				const u8 candidateId = i;
 				const BitBoard candidates = p.AllCandidates[candidateId];
 				const auto pairs = findConjugatePairsForCandidate(p, candidateId);
@@ -984,9 +984,9 @@ namespace dd
 						const BitBoard neighbours = BoardBits::NeighboursForNodeCombined(node);
 						const BitBoard alreadyHandled = (open | closed).invert();
 						const BitBoard conjugatePairsForNode = buildValidOutgoingNodes(node);
+						// need to validate that each "potential next node" is actually part of the links between "conjugate pairs"
 						const BitBoard possibleNextSteps = neighbours & conjugatePairsForNode & alreadyHandled;
 						if (possibleNextSteps.notEmpty()) {
-							// need to validate that each "marked bit" is actually part of the links between "conjugate pairs"
 							open |= possibleNextSteps;
 							nextBoard |= possibleNextSteps;
 						}
@@ -1026,7 +1026,20 @@ namespace dd
 							}
 						}
 
-						// rule 3: if a unit contains both colours, and that candidate
+						// rule 3: if a node can see both colours in any unit, it cannot have that candidate
+
+						for (auto&& dim : p.AllDimensions) {
+							//whiteMark.foreachSetBit([]() {
+
+							//});
+
+							const BitBoard inDimension = dim & whiteMark;
+							if (inDimension.countSetBits() > 1) {
+
+
+								return true; // #error - should we really return here?
+							}
+						}
 
 						int apa = 0;
 					}
