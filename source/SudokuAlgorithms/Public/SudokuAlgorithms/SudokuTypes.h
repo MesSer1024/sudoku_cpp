@@ -306,7 +306,7 @@ namespace dd
 			return other.bits[0] == this->bits[0] && other.bits[1] == this->bits[1];
 		}
 
-		BitBoard getInverted() const {
+		BitBoard invert() const {
 			BitBoard inverted;
 			inverted.bits[0] = ~bits[0];
 			inverted.bits[1] = ~bits[1];

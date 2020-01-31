@@ -24,6 +24,7 @@ namespace dd
 		BoxLineReduction,
 		X_Wing, 
 		Y_Wing,
+		SingleChain,
 	};
 
 using TechniqueName = std::pair<Techniques, const char*>;
@@ -42,7 +43,7 @@ std::map<Techniques, const char*> TechniqueNameLookup = {
 	TechniqueName(Techniques::BoxLineReduction, "BoxLineReduction"),
 	TechniqueName(Techniques::X_Wing, "X-Wing"),
 	TechniqueName(Techniques::Y_Wing, "Y-Wing"),
-
+	TechniqueName(Techniques::SingleChain, "Single Chain"),
 };
 
 }

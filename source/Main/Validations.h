@@ -230,7 +230,7 @@ namespace dd
 				}
 			}
 
-			BoardBits::SudokuBitBoard flippedAndMasked = bitBoardSolved.getInverted();
+			BoardBits::SudokuBitBoard flippedAndMasked = bitBoardSolved.invert();
 			assert(flippedAndMasked == bitBoardUnsolved);
 		}
 
