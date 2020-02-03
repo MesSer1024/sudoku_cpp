@@ -55,9 +55,13 @@ namespace dd
 		boards.emplace_back(".2.9437159.4...6..75.....4.5..48....2.....4534..352....42....81..5..426..9.2.85.4"); // Box-Line reduction(s) & Y-Wing
 		boards.emplace_back("9..24.....5.69.231.2..5..9..9.7..32...29356.7.7...29...69.2..7351..79.622.7.86..9"); // Pointing pairs x4, Y-Wing x3
 		boards.emplace_back(".179.36......8....9.....5.7.72.1.43....4.2.7..6437.25.7.1....65....3......56.172."); // Pointing pairs + box line reduction + y-wing
-		boards.emplace_back(".3621.84.8...45631.14863..9287.3.456693584...1456723984.8396...35..28.64.6.45..83"); // (Simple colouring (rule 4) or BoxlineReduction) & Y-Wing
-		boards.emplace_back("123...587..5817239987...164.51..847339.75.6187.81..925.76...89153..8174681..7.352"); //Simple coloring (rule 2)
-		//boards.emplace_back("..463.5..6.54.1..337..5964.938.6.154457198362216345987.435.6.19.6.9.34.55.9.14.36"); //Simple colouring (rule 5)
+		boards.emplace_back(".3621.84.8...45631.14863..9287.3.456693584...1456723984.8396...35..28.64.6.45..83"); // (Simple colouring (rule ?) or BoxlineReduction) & Y-Wing
+		boards.emplace_back("123...587..5817239987...164.51..847339.75.6187.81..925.76...89153..8174681..7.352"); //Simple coloring (rule ?)
+		boards.emplace_back("..463.5..6.54.1..337..5964.938.6.154457198362216345987.435.6.19.6.9.34.55.9.14.36"); //Simple colouring (rule ?)
+		boards.emplace_back("..93.7.....142.87..7.......3...6......791..2......2..5..2....5......16.4..8.....9"); //Simple Colouring (rule ?)
+		boards.emplace_back("..7.836...397.68..82641975364.19.387.8.367....73.48.6.39.87..267649..1382.863.97."); //Simple Coloring (rule_x - requires removing neighbours that see both "colors")
+		boards.emplace_back(".623148.7.3....2...7.2..4.3...9...3.6.1....42.......8.2..6..174....5.6.8.167.83.."); //Simple colouring
+		boards.emplace_back("....14....3....2...7..........9...3.6.1.............8.2.....1.4....5.6.....7.8..."); //Simple Colouring & Pointing Pairs improvement (Or Hidden Unique Rectangles)
 		//boards.emplace_back("42.9..386.6.2..7948.9.6.2517....3.259..1.26.32..5....8..4.2.5676827..439......812"); //Unique Rectangle | Also good because solver at sudokuwiki.org uses unneccessary techniques such as simple colouring & X-cycle which removes candidates but is unneccessary for solution
 		//boards.emplace_back("1.957.3...7.39..1...3.1.597.8.743...492.5.78373.289.4.317.2.4..26..3..7.95..67231"); //(hidden unique rectangle - type 1)
 		//boards.emplace_back("5..291836.3.475.1...9386457.5.143...4..7.9..1...8.2.4.3...2.17..8.937.2.7.2.1...3"); //(hidden unique rectangle - type 2)
@@ -66,12 +70,8 @@ namespace dd
 		//boards.emplace_back("........476..1..5..9...2.81.7..5..1....7.9....8..3..6.24.1...7..1..9..459........"); // x-wing x2 [then, xyz-wing, x-cycles x3, xy-chain ...]
 
 		////hard
-		//boards.emplace_back("..93.7.....142.87..7.......3...6......791..2......2..5..2....5......16.4..8.....9"); //Simple Colouring
-		//boards.emplace_back("..7.836...397.68..82641975364.19.387.8.367....73.48.6.39.87..267649..1382.863.97."); //Simple Coloring |same as above but partially solved
 		//boards.emplace_back("..5...987.4..5...1..7......2...48....9.1.....6..2.....3..6..2.......9.7.......5.."); //X Cycles
 		//boards.emplace_back("48.3............71.2.......7.5....6....2..8.............1.76...3.....4......5...."); //Y-Wing | XY-chain
-		//boards.emplace_back("....14....3....2...7..........9...3.6.1.............8.2.....1.4....5.6.....7.8..."); //Simple Colouring & Pointing Pairs improvement (Or Hidden Unique Rectangles)
-		//boards.emplace_back(".623148.7.3....2...7.2..4.3...9...3.6.1....42.......8.2..6..174....5.6.8.167.83.."); //Simple colouring
 		//boards.emplace_back(".524.........7.1..............8.2...3.....6...9.5.....1.6.3...........897........"); // 3D-medusa, Hidden Unique Rectangle, Alternating Inference Chains
 		//boards.emplace_back(".923.........8.1...........1.7.4...........658.........6.5.2...4.....7.....9....."); //Line-Box Reduction, 3D Medusa, Hidden Unique Rectangle, Alternating Inference Chains
 		//boards.emplace_back("6..3.2....5.....1..........7.26............543.........8.15........4.2........7.."); //X Cycle, Unique Rectangle, Grouped X-Cycle, Cell forcing chain, Almost Locked Set, Quad Forcing Chain, Unit Forcing Chain, Line Box Reduction

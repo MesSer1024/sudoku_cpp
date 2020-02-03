@@ -120,7 +120,7 @@ namespace dd
 			return dimensions;
 		}
 
-		constexpr BitBoard NeighboursForNodeCombined(uint nodeId) {
+		constexpr BitBoard NeighboursForNode(uint nodeId) {
 			const uint rowId = BoardUtils::RowForNodeId(nodeId);
 			const uint columnId = BoardUtils::ColumnForNodeId(nodeId);
 			const uint blockId = BoardUtils::BlockForNodeId(nodeId);
@@ -130,12 +130,22 @@ namespace dd
 			return b;
 		}
 
-		SudokuBitBoard SharedNeighborsClearSelf(const u16* nodes, u8 count) {
+		SudokuBitBoard NeighboursIntersection(u8* nodes, u8 numNodes) {
+			BitBoard combined(BitBoard::All{});
+
+			for (uint i = 0; i < numNodes; ++i) {
+				combined &= NeighboursForNode(nodes[i]);
+			}
+
+			return combined;
+		}
+
+		SudokuBitBoard NeighboursUnion_ifAllNodesAreSameDimension(const u8* nodes, u8 count) {
 			BitBoard sharedNeighbours;
 
-			u32 rows[8];
-			u32 cols[8];
-			u32 blocks[8];
+			u32 rows[9];
+			u32 cols[9];
+			u32 blocks[9];
 
 			for (uint i = 0; i < count; ++i) {
 				rows[i] = BoardUtils::RowForNodeId(nodes[i]);
@@ -143,6 +153,7 @@ namespace dd
 				blocks[i] = BoardUtils::BlockForNodeId(nodes[i]);
 			}
 
+			// #todo : is this correct? Doesn't adjacent_find require data to be sorted?
 			if (std::adjacent_find(rows, rows + count, std::not_equal_to<>()) == rows + count)
 				sharedNeighbours |= BitRow(rows[0]);
 			if (std::adjacent_find(cols, cols + count, std::not_equal_to<>()) == cols + count)
@@ -157,7 +168,7 @@ namespace dd
 			return sharedNeighbours;
 		}
 
-		constexpr SudokuBitBoard SharedNeighboursClearSelf(u32 node1, u32 node2) {
+		constexpr SudokuBitBoard NeighboursUnion_ifNodesAreSameDimension(u32 node1, u32 node2) {
 			const u32 c1 = BoardUtils::ColumnForNodeId(node1);
 			const u32 c2 = BoardUtils::ColumnForNodeId(node2);
 			const u32 r1 = BoardUtils::RowForNodeId(node1);
@@ -178,24 +189,6 @@ namespace dd
 			sharedNeighbours.clearBit(node2);
 
 			return sharedNeighbours;
-		}
-
-		SudokuBitBoard IntersectedNodes(u8* nodes, u8 numNodes) {
-			BitBoard combined(BitBoard::All{});
-
-			for (uint i = 0; i < numNodes; ++i) {
-				combined &= NeighboursForNodeCombined(nodes[i]);
-			}
-
-			return combined;
-		}
-
-		SudokuBitBoard SharedNeighborsClearSelf(const u8* nodes, u8 count) {
-			u16 temp[9];
-			for (uint i = 0; i < count; ++i)
-				temp[i] = nodes[i];
-
-			return SharedNeighborsClearSelf(&temp[0], count);
 		}
 
 		//////////////////////////////////////////////////////

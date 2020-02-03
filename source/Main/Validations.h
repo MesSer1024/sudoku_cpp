@@ -167,14 +167,14 @@ namespace dd
 		{
 			for (uint i = 0; i < BoardSize; ++i)
 			{
-				BitBoard neighbours = BoardBits::NeighboursForNodeCombined(i);
+				BitBoard neighbours = BoardBits::NeighboursForNode(i);
 				assert(neighbours.countSetBits() == 20);
 			}
 		}
 
 		{
 			const u32 NodeId = 2;
-			BitBoard neighbours = BoardBits::NeighboursForNodeCombined(NodeId);
+			BitBoard neighbours = BoardBits::NeighboursForNode(NodeId);
 			BoardBits::SudokuBitBoard ExpectedRow = BoardBits::BitRow(BoardUtils::RowForNodeId(NodeId));
 			BoardBits::SudokuBitBoard ExpectedColumn = BoardBits::BitColumn(BoardUtils::ColumnForNodeId(NodeId));
 			BoardBits::SudokuBitBoard ExpectedBlock = BoardBits::BitBlock(BoardUtils::BlockForNodeId(NodeId));
@@ -249,7 +249,7 @@ namespace dd
 			techniques::fillUnsolvedWithNonNaiveCandidates(ctx);
 
 			const BitBoard unsolved = BoardBits::bitsUnsolved(board);
-			BitBoard unsolvedNeighbours = BoardBits::NeighboursForNodeCombined(0) & unsolved;
+			BitBoard unsolvedNeighbours = BoardBits::NeighboursForNode(0) & unsolved;
 			const u16 ExpectedCandidates = Candidates::All & (~Candidates::c1);
 			const u32 numUnsolvedNeighbours = unsolvedNeighbours.countSetBits();
 
@@ -269,7 +269,7 @@ namespace dd
 			techniques::fillUnsolvedWithNonNaiveCandidates(ctx);
 
 			const BitBoard unsolved = BoardBits::bitsUnsolved(board);
-			const BitBoard unsolvedNeighbours = BoardBits::NeighboursForNodeCombined(0) & unsolved;
+			const BitBoard unsolvedNeighbours = BoardBits::NeighboursForNode(0) & unsolved;
 			const u16 ExpectedCandidates = Candidates::All & (~(Candidates::c1 | Candidates::c2));
 			const u32 numUnsolvedNeighbours = unsolvedNeighbours.countSetBits();
 

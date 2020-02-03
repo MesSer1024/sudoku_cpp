@@ -81,7 +81,7 @@ namespace dd
 					nodeIds[i] = i < count ? nodes[i] : 0;
 				combinedMask = mask;
 			}
-			u16 nodeIds[4]{};
+			u8 nodeIds[4]{};
 			u16 combinedMask{ 0 };
 
 			bool operator==(const NakedMatch& other) const {
@@ -324,7 +324,7 @@ namespace dd
 			for (uint i = 0; i < numPotentials; ++i) {
 				const NakedMatch& match = matches[i];
 
-				const BitBoard sharedNeighbours = BoardBits::SharedNeighborsClearSelf(match.nodeIds, depth);
+				const BitBoard sharedNeighbours = BoardBits::NeighboursUnion_ifAllNodesAreSameDimension(match.nodeIds, depth);
 				const BitBoard nodesWithMaskedCandidates = BoardUtils::mergeCandidateBoards(p, match.combinedMask);
 				const BitBoard affectedNodes = nodesWithMaskedCandidates & sharedNeighbours;
 
@@ -525,13 +525,13 @@ namespace dd
 					// this is a pointing pair
 					// all other nodes in that row/column can remove that candidate
 
-			struct Match {
+			struct PointingPairMatch {
 				u8 numNodes{};
 				u8 nodes[4]{};
 				uint candidateId;
 			};
 
-			Match matches[81];
+			PointingPairMatch matches[81];
 			uint numMatches = 0;
 
 			const uint firstBlock = 18;
@@ -547,7 +547,7 @@ namespace dd
 						const bool sameCol = BoardUtils::sharesColumn(nodes, numNodes);
 
 						if (sameRow || sameCol) {
-							Match& match = matches[numMatches];
+							PointingPairMatch& match = matches[numMatches];
 							uint j = 0;
 							while (j < 4) {
 								match.nodes[j] = nodes[j];
@@ -564,8 +564,8 @@ namespace dd
 
 			if (numMatches > 0) {
 				for (uint i = 0; i < numMatches; ++i) {
-					const Match& match = matches[i];
-					const BitBoard neighbours = BoardBits::SharedNeighborsClearSelf(match.nodes, match.numNodes);
+					const PointingPairMatch& match = matches[i];
+					const BitBoard neighbours = BoardBits::NeighboursUnion_ifAllNodesAreSameDimension(match.nodes, match.numNodes);
 					const BitBoard neighboursWithCandidate = p.AllCandidates[match.candidateId] & neighbours;
 					if (neighboursWithCandidate.notEmpty()) {
 						p.result.storePreModification(p.b.Nodes, neighboursWithCandidate);
@@ -804,7 +804,7 @@ namespace dd
 					const u8 numCandidates = p.b.Nodes[bit].fillCandidateIds(candidates);
 					assert(numCandidates == 2);
 
-					const BitBoard neighboursWith2Candidates = BoardBits::NeighboursForNodeCombined(bit) & nodesWithExactly2Candidates;
+					const BitBoard neighboursWith2Candidates = BoardBits::NeighboursForNode(bit) & nodesWithExactly2Candidates;
 					BitBoard neighboursWithC1 = neighboursWith2Candidates & p.AllCandidates[candidates[0]];
 					BitBoard neighboursWithC2 = neighboursWith2Candidates & p.AllCandidates[candidates[1]];
 					const BitBoard invalidNodes = neighboursWithC1 & neighboursWithC2;
@@ -836,7 +836,7 @@ namespace dd
 									assert(countCandidates(oneCandidate) == 1);
 									const u8 searchedCandidateId = static_cast<u8>(getOnlyCandidateFromMask(oneCandidate) - 1);
 
-									const BitBoard allSeenNodes = BoardBits::IntersectedNodes(&nodes[1], 2); // take the 2 other nodes (except the one I was iterating over
+									const BitBoard allSeenNodes = BoardBits::NeighboursIntersection(&nodes[1], 2); // take the 2 other nodes (except the one I was iterating over
 									const BitBoard seenWithCandidateAndPotential = allSeenNodes & p.AllCandidates[searchedCandidateId];
 									if (seenWithCandidateAndPotential.notEmpty()) {
 										YWingCombination& ywing = ywings[numYwings++];
@@ -981,7 +981,7 @@ namespace dd
 
 						marked.setBit(node);
 
-						const BitBoard neighbours = BoardBits::NeighboursForNodeCombined(node);
+						const BitBoard neighbours = BoardBits::NeighboursForNode(node);
 						const BitBoard alreadyHandled = (open | closed).invert();
 						const BitBoard conjugatePairsForNode = buildValidOutgoingNodes(node);
 						// need to validate that each "potential next node" is actually part of the links between "conjugate pairs"
@@ -1026,20 +1026,31 @@ namespace dd
 							}
 						}
 
-						// rule 3: if a node can see both colours in any unit, it cannot have that candidate
+						//rule 4|5: if a node can see both colours in any unit, it cannot have that candidate
+						//I think this implementation is correct, nothing validates it...
+						{
+							BitBoard affectedNodes;
+							const BitBoard unhandledNodes = (whiteMark | blackMark).invert() & candidates;
 
-						for (auto&& dim : p.AllDimensions) {
-							//whiteMark.foreachSetBit([]() {
+							unhandledNodes.foreachSetBit([&whiteMark, &blackMark, &affectedNodes, &candidates](u32 bit) {
+								const BitBoard neighbours = BoardBits::NeighboursForNode(bit);
+								if ((neighbours & whiteMark).notEmpty()) {
+									if ((neighbours & blackMark).notEmpty()) {
+										affectedNodes.setBit(bit);
+									}
+								}
+							});
 
-							//});
+							if (affectedNodes.notEmpty()) {
+								p.result.storePreModification(p.b.Nodes, affectedNodes);
 
-							const BitBoard inDimension = dim & whiteMark;
-							if (inDimension.countSetBits() > 1) {
-
+								affectedNodes.foreachSetBit([&p, candidateId](u32 bit) {
+									p.b.Nodes[bit].candidatesRemoveSingle(candidateId + 1);
+								});
 
 								return true; // #error - should we really return here?
 							}
-						}
+						} // rule 4|5
 
 						int apa = 0;
 					}
