@@ -26,60 +26,60 @@ namespace dd
 		boards.emplace_back("..5.398...82.1...7.4.75.62..3.49.................23.8..91.82.6.5...6.93...894.1..");
 		boards.emplace_back("1...8...3.7.5...81....1365...73..........8..9.4.6.25....9.....8....6...4..3...9..");
 
-		// Combination of Naked pair+triplet
+		// advanced - Combination of Naked pair+triplet
 		boards.emplace_back(".....1.68..4.26.3.286.7....84..1...66..7..........4...51......7....5.9..769...8.2"); // naked pair
 		boards.emplace_back("....65...1...9.5...7.28...1..7.14..64.9...32..5..........63.4.....8.....2....1.7."); // naked pair
 		boards.emplace_back(".....5..1...9...36.9..2......4....9.......583.....7..2.7...1.2..5.4..1...1..5.37."); // naked pair
 		boards.emplace_back(".1.........91..36...68..79.89.5..2....7.......4...9.5....3.....9.2.6..8..3...4..."); // naked pair
 		boards.emplace_back("4...2..8...1..495....5.1....53....9.........1..6..7...........7.....2....7.34..26"); // naked pair
 		boards.emplace_back("..3.....1.9..35268..........7....18613.86.725286...943.41.8.3...5.2.6.1......3.7."); // naked pair
-		
 		boards.emplace_back(".7...8.29..2.....4854.2......83742.............32617......9.6122.....4..13.6...7."); // naked triplet
 		boards.emplace_back("75..4..8.........2.93....5..1...8...5...63.7.......4.....72.3....19.62..8.....1.."); // naked pair + ?
 		boards.emplace_back("31....2..9..7....3.....9.6....8........9.28...7.6.5.2.....2.5...5....1.4.64......"); // naked pair + ?
 		boards.emplace_back("1.........5....1.2..25.74....5.38.1......467.7....5..9.9.....8.......9...734....."); // naked pair + ?
 
-		//advanced (not naked)
+		// advanced - hidden + naked
 		boards.emplace_back("3.8.2..7.....31....4......8.....8.57..3..61..5.....2.675...9............4..75..9."); // hidden pair/triplet
-		boards.emplace_back("7.....9......8..67..37...141..6.2....9.....7....9.8..637...41..95..3......6.....2");// hidden pair/triplet
-		boards.emplace_back("..219.4....5....3.......6.5..19...87.2...6...5.8........6......41.6.7..97..8...2.");// hidden pair/triplet
-		boards.emplace_back(".3...8.....7.13.8..6.5..314......95.6.....273.72......291..5.3..4.39.5.....7...6.");// hidden pair/triplet
-		boards.emplace_back(".....1.3.231.9.....65..31..6789243..1.3.5...6...1367....936.57...6.198433........"); //Hidden triples
+		boards.emplace_back("7.....9......8..67..37...141..6.2....9.....7....9.8..637...41..95..3......6.....2"); // hidden pair/triplet
+		boards.emplace_back("..219.4....5....3.......6.5..19...87.2...6...5.8........6......41.6.7..97..8...2."); // hidden pair/triplet
+		boards.emplace_back(".3...8.....7.13.8..6.5..314......95.6.....273.72......291..5.3..4.39.5.....7...6."); // hidden pair/triplet
+		boards.emplace_back(".....1.3.231.9.....65..31..6789243..1.3.5...6...1367....936.57...6.198433........"); // Hidden triples
+		boards.emplace_back("....3..86....2..4..9..7852.3718562949..1423754..3976182..7.3859.392.54677..9.4132"); // Naked Triple/Quads
 
-		//pointing pairs required
-		boards.emplace_back("....3..86....2..4..9..7852.3718562949..1423754..3976182..7.3859.392.54677..9.4132"); //Naked Triple/Quads
+		// hard
 		boards.emplace_back("5..683....8..7......6.2..7....2.5....9.7..35.81.........9......43....1........82."); // Pointing pairs
-		boards.emplace_back("13......95.64.1......29.....8....5.3.7...4.....3.7..2.....4..9......3....276.8.3."); //naked, hidden, pointing pairs
+		boards.emplace_back("13......95.64.1......29.....8....5.3.7...4.....3.7..2.....4..9......3....276.8.3."); // naked, hidden, pointing pairs
 		boards.emplace_back("1.....569492.561.8.561.924...964.8.1.64.1....218.356.4.4.5...169.5.614.2621.....5"); // Pointing pairs, x-wing
-		boards.emplace_back(".16..78.3.9.8.....87...126..48...3..65...9.82.39...65..6.9...2..8...29369246..51."); //Box-Line Reduction & Y-Wing
+		boards.emplace_back(".16..78.3.9.8.....87...126..48...3..65...9.82.39...65..6.9...2..8...29369246..51."); // Box-Line Reduction & Y-Wing
 		boards.emplace_back(".2.9437159.4...6..75.....4.5..48....2.....4534..352....42....81..5..426..9.2.85.4"); // Box-Line reduction(s) & Y-Wing
 		boards.emplace_back("9..24.....5.69.231.2..5..9..9.7..32...29356.7.7...29...69.2..7351..79.622.7.86..9"); // Pointing pairs x4, Y-Wing x3
 		boards.emplace_back(".179.36......8....9.....5.7.72.1.43....4.2.7..6437.25.7.1....65....3......56.172."); // Pointing pairs + box line reduction + y-wing
-		boards.emplace_back(".3621.84.8...45631.14863..9287.3.456693584...1456723984.8396...35..28.64.6.45..83"); // (Simple colouring (rule ?) or BoxlineReduction) & Y-Wing
-		boards.emplace_back("123...587..5817239987...164.51..847339.75.6187.81..925.76...89153..8174681..7.352"); //Simple coloring (rule ?)
-		boards.emplace_back("..463.5..6.54.1..337..5964.938.6.154457198362216345987.435.6.19.6.9.34.55.9.14.36"); //Simple colouring (rule ?)
-		boards.emplace_back("..93.7.....142.87..7.......3...6......791..2......2..5..2....5......16.4..8.....9"); //Simple Colouring (rule ?)
-		boards.emplace_back("..7.836...397.68..82641975364.19.387.8.367....73.48.6.39.87..267649..1382.863.97."); //Simple Coloring (rule_x - requires removing neighbours that see both "colors")
-		boards.emplace_back(".623148.7.3....2...7.2..4.3...9...3.6.1....42.......8.2..6..174....5.6.8.167.83.."); //Simple colouring
-		boards.emplace_back("....14....3....2...7..........9...3.6.1.............8.2.....1.4....5.6.....7.8..."); //Simple Colouring & Pointing Pairs improvement (Or Hidden Unique Rectangles)
-		//boards.emplace_back("42.9..386.6.2..7948.9.6.2517....3.259..1.26.32..5....8..4.2.5676827..439......812"); //Unique Rectangle | Also good because solver at sudokuwiki.org uses unneccessary techniques such as simple colouring & X-cycle which removes candidates but is unneccessary for solution
-		//boards.emplace_back("1.957.3...7.39..1...3.1.597.8.743...492.5.78373.289.4.317.2.4..26..3..7.95..67231"); //(hidden unique rectangle - type 1)
-		//boards.emplace_back("5..291836.3.475.1...9386457.5.143...4..7.9..1...8.2.4.3...2.17..8.937.2.7.2.1...3"); //(hidden unique rectangle - type 2)
-		//boards.emplace_back(".2.58..3.35.....84.867...2..48.9.1565..6.8.4.963.5.278.9..6581.6..8...9283.....6."); //(hidden unique rectangle - type 2b)
-		//boards.emplace_back("5184726393.6859..44.9316...94562.3..861.34..5732.85..665..9.8.3293.48.6118..63..."); //(hidden unique rectangle - type 2b - awesome example)
+		boards.emplace_back(".3621.84.8...45631.14863..9287.3.456693584...1456723984.8396...35..28.64.6.45..83"); // (Single Chain (rule ?) or BoxlineReduction) & Y-Wing
+		boards.emplace_back("123...587..5817239987...164.51..847339.75.6187.81..925.76...89153..8174681..7.352"); // Simple coloring (rule ?)
+		boards.emplace_back("..463.5..6.54.1..337..5964.938.6.154457198362216345987.435.6.19.6.9.34.55.9.14.36"); // Single Chain (rule ?)
+		boards.emplace_back("..93.7.....142.87..7.......3...6......791..2......2..5..2....5......16.4..8.....9"); // Single Chain (rule ?)
+		boards.emplace_back(".623148.7.3....2...7.2..4.3...9...3.6.1....42.......8.2..6..174....5.6.8.167.83.."); // Single Chain
+		boards.emplace_back("....14....3....2...7..........9...3.6.1.............8.2.....1.4....5.6.....7.8..."); // Single Chain & Pointing Pairs improvement (Or Hidden Unique Rectangles)
+		boards.emplace_back("..7.836...397.68..82641975364.19.387.8.367....73.48.6.39.87..267649..1382.863.97."); // Single Chain (rule_x - requires removing neighbours that see both "colors")
+
+		//boards.emplace_back("42.9..386.6.2..7948.9.6.2517....3.259..1.26.32..5....8..4.2.5676827..439......812"); // Unique Rectangle | Also good because solver at sudokuwiki.org uses unneccessary techniques such as Single Chain & X-cycle which removes candidates but is unneccessary for solution
+		//boards.emplace_back("1.957.3...7.39..1...3.1.597.8.743...492.5.78373.289.4.317.2.4..26..3..7.95..67231"); // hidden unique rectangle - type 1)
+		//boards.emplace_back("5..291836.3.475.1...9386457.5.143...4..7.9..1...8.2.4.3...2.17..8.937.2.7.2.1...3"); // hidden unique rectangle - type 2)
+		//boards.emplace_back(".2.58..3.35.....84.867...2..48.9.1565..6.8.4.963.5.278.9..6581.6..8...9283.....6."); // hidden unique rectangle - type 2b)
+		//boards.emplace_back("5184726393.6859..44.9316...94562.3..861.34..5732.85..665..9.8.3293.48.6118..63..."); // hidden unique rectangle - type 2b - awesome example)
+
+		//// Tough
+		//boards.emplace_back("..5...987.4..5...1..7......2...48....9.1.....6..2.....3..6..2.......9.7.......5.."); // X Cycles
+		//boards.emplace_back("..5...987.4..5...1..7......2...48....9.1.....6..2.....3..6..2.......9.7.......5.."); // X Cycles
+		//boards.emplace_back("48.3............71.2.......7.5....6....2..8.............1.76...3.....4......5...."); // Y-Wing | XY-chain
 		//boards.emplace_back("........476..1..5..9...2.81.7..5..1....7.9....8..3..6.24.1...7..1..9..459........"); // x-wing x2 [then, xyz-wing, x-cycles x3, xy-chain ...]
-
-		////hard
-		//boards.emplace_back("..5...987.4..5...1..7......2...48....9.1.....6..2.....3..6..2.......9.7.......5.."); //X Cycles
-		//boards.emplace_back("48.3............71.2.......7.5....6....2..8.............1.76...3.....4......5...."); //Y-Wing | XY-chain
 		//boards.emplace_back(".524.........7.1..............8.2...3.....6...9.5.....1.6.3...........897........"); // 3D-medusa, Hidden Unique Rectangle, Alternating Inference Chains
-		//boards.emplace_back(".923.........8.1...........1.7.4...........658.........6.5.2...4.....7.....9....."); //Line-Box Reduction, 3D Medusa, Hidden Unique Rectangle, Alternating Inference Chains
-		//boards.emplace_back("6..3.2....5.....1..........7.26............543.........8.15........4.2........7.."); //X Cycle, Unique Rectangle, Grouped X-Cycle, Cell forcing chain, Almost Locked Set, Quad Forcing Chain, Unit Forcing Chain, Line Box Reduction
-		//boards.emplace_back("..5...987.4..5...1..7......2...48....9.1.....6..2.....3..6..2.......9.7.......5.."); //X Cycles
+		//boards.emplace_back(".923.........8.1...........1.7.4...........658.........6.5.2...4.....7.....9....."); // Line-Box Reduction, 3D Medusa, Hidden Unique Rectangle, Alternating Inference Chains
+		//boards.emplace_back("6..3.2....5.....1..........7.26............543.........8.15........4.2........7.."); // X Cycle, Unique Rectangle, Grouped X-Cycle, Cell forcing chain, Almost Locked Set, Quad Forcing Chain, Unit Forcing Chain, Line Box Reduction
 
 
-		//boards.emplace_back("6.2.5.........3.4..........43...8....1....2........7..5..27...........81...6....."); //X-cycles | Quad Forcing Chains | Unit forcing chains | Altern Inferencing chains | Bowman's Bingo -- Force Solve required
-		//boards.emplace_back("6.2.5.........4.3..........43...8....1....2........7..5..27...........81...6....."); //force required
+		//boards.emplace_back("6.2.5.........3.4..........43...8....1....2........7..5..27...........81...6....."); // X-cycles | Quad Forcing Chains | Unit forcing chains | Altern Inferencing chains | Bowman's Bingo -- Force Solve required
+		//boards.emplace_back("6.2.5.........4.3..........43...8....1....2........7..5..27...........81...6....."); // force required
 
 		////---special boardInputs-- -
 		//boards.emplace_back("1....786...7..8.1.8..2....9........24...1......9..5...6.8..........5.9.......93.4");
