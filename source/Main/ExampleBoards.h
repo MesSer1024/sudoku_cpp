@@ -62,11 +62,11 @@ namespace dd
 		boards.emplace_back("....14....3....2...7..........9...3.6.1.............8.2.....1.4....5.6.....7.8..."); // Single Chain & Pointing Pairs improvement (Or Hidden Unique Rectangles)
 		boards.emplace_back("..7.836...397.68..82641975364.19.387.8.367....73.48.6.39.87..267649..1382.863.97."); // Single Chain (rule_x - requires removing neighbours that see both "colors")
 
-		//boards.emplace_back("42.9..386.6.2..7948.9.6.2517....3.259..1.26.32..5....8..4.2.5676827..439......812"); // Unique Rectangle | Also good because solver at sudokuwiki.org uses unneccessary techniques such as Single Chain & X-cycle which removes candidates but is unneccessary for solution
-		//boards.emplace_back("1.957.3...7.39..1...3.1.597.8.743...492.5.78373.289.4.317.2.4..26..3..7.95..67231"); // hidden unique rectangle - type 1)
-		//boards.emplace_back("5..291836.3.475.1...9386457.5.143...4..7.9..1...8.2.4.3...2.17..8.937.2.7.2.1...3"); // hidden unique rectangle - type 2)
-		//boards.emplace_back(".2.58..3.35.....84.867...2..48.9.1565..6.8.4.963.5.278.9..6581.6..8...9283.....6."); // hidden unique rectangle - type 2b)
-		//boards.emplace_back("5184726393.6859..44.9316...94562.3..861.34..5732.85..665..9.8.3293.48.6118..63..."); // hidden unique rectangle - type 2b - awesome example)
+		boards.emplace_back("42.9..386.6.2..7948.9.6.2517....3.259..1.26.32..5....8..4.2.5676827..439......812"); // Unique Rectangle | Also good because solver at sudokuwiki.org uses unneccessary techniques such as Single Chain & X-cycle which removes candidates but is unneccessary for solution
+		boards.emplace_back("1.957.3...7.39..1...3.1.597.8.743...492.5.78373.289.4.317.2.4..26..3..7.95..67231"); // hidden unique rectangle - type 1)
+		boards.emplace_back("5..291836.3.475.1...9386457.5.143...4..7.9..1...8.2.4.3...2.17..8.937.2.7.2.1...3"); // hidden unique rectangle - type 2)
+		boards.emplace_back(".2.58..3.35.....84.867...2..48.9.1565..6.8.4.963.5.278.9..6581.6..8...9283.....6."); // hidden unique rectangle - type 2b)
+		boards.emplace_back("5184726393.6859..44.9316...94562.3..861.34..5732.85..665..9.8.3293.48.6118..63..."); // hidden unique rectangle - type 2b - awesome example)
 
 		//// Tough
 		//boards.emplace_back("..5...987.4..5...1..7......2...48....9.1.....6..2.....3..6..2.......9.7.......5.."); // X Cycles

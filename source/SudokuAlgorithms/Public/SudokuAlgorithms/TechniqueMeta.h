@@ -25,6 +25,7 @@ namespace dd
 		X_Wing, 
 		Y_Wing,
 		SingleChain,
+		UniqueRectangle,
 	};
 
 using TechniqueName = std::pair<Techniques, const char*>;
@@ -44,6 +45,7 @@ std::map<Techniques, const char*> TechniqueNameLookup = {
 	TechniqueName(Techniques::X_Wing, "X-Wing"),
 	TechniqueName(Techniques::Y_Wing, "Y-Wing"),
 	TechniqueName(Techniques::SingleChain, "Single Chain"),
+	TechniqueName(Techniques::UniqueRectangle, "Unique Rectangle"),
 };
 
 }

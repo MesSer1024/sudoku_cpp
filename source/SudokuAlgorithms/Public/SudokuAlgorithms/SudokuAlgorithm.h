@@ -277,11 +277,6 @@ namespace dd
 			//				check if any other node in "dimension" has any of "combined_candidates", if so technique was successful and that candidate can be removed from neighbour
 			// -----------------------------------------
 
-			BitBoard allNakedNodes = BoardUtils::boardWhereCandidateCountInRange(p, depth);
-			NodePermutationGenerator combo(p, allNakedNodes, depth);
-
-			uint numMatches = 0;
-
 			using NodeQueryAction = std::function<void(u8* nodeIds, u8 count)>;
 			struct NodeQuery {
 				BitBoard boardMask;
@@ -290,6 +285,11 @@ namespace dd
 				u8 whereBitCountGt;
 				NodeQueryAction action;
 			};
+
+			uint numMatches = 0;
+			BitBoard allNakedNodes = BoardBits::nodesWithCandidateCountBetweenXY(p.AllCandidates, 2, depth);
+
+			NodePermutationGenerator combo(p, allNakedNodes, depth);
 			
 			NodeQuery query;
 			query.boardMask = allNakedNodes;
@@ -785,7 +785,8 @@ namespace dd
 			YWingCombination ywings[100];
 			u8 numYwings = 0;
 
-			const BitBoard nodesWithExactly2Candidates = BoardUtils::boardWhereCandidateCountInRange(p, 2, 2);
+			const BitBoard nodesWithExactly2Candidates = BoardBits::nodesWithCandidateCountBetweenXY(p.AllCandidates, 2, 2);
+
 			BitBoard specificCandidates[9];
 			u8 numSpecificCandidates[9];
 			for (uint i = 0; i < 9; ++i) {
@@ -861,33 +862,6 @@ namespace dd
 			return p.result.size() > 0;
 		}
 
-		// If a candidate appears EXACTLY twice in a unit, then those two candidates are called a conjugate pair.
-		struct ConjugatePair {
-			u8 node1;
-			u8 node2;
-			u8 candidateId;
-			u8 dimensionId;
-		};
-
-		// If a candidate appears EXACTLY twice in a unit, then those two candidates are called a conjugate pair.
-		std::vector<ConjugatePair> findConjugatePairsForCandidate(const SudokuContext& p, u8 candidateId) {
-			std::vector<ConjugatePair> pairs;
-
-			const BitBoard& candidates = p.AllCandidates[candidateId];
-			for (u8 i = 0; i < 27; ++i) {
-				const BitBoard inDimension = p.AllDimensions[i] & candidates;
-				const u8 numOccurances = inDimension.countSetBits();
-				if (numOccurances == 2) {
-					u8 nodes[2];
-					inDimension.fillSetBits(nodes);
-
-					pairs.push_back(ConjugatePair{ nodes[0], nodes[1], candidateId, i });
-				}
-			}
-
-			return pairs;
-		}
-
 		bool singleChain(SudokuContext& p) {
 			p.result.Technique = Techniques::SingleChain;
 
@@ -918,7 +892,7 @@ namespace dd
 			for (u8 i = 0; i < 9; ++i) {
 				const u8 candidateId = i;
 				const BitBoard candidates = p.AllCandidates[candidateId];
-				const auto pairs = findConjugatePairsForCandidate(p, candidateId);
+				const auto pairs = BoardBits::findConjugatePairsForCandidate(p, candidateId);
 				BitBoard closed; // any handled node have looked at all neighbours, meaning we should not have to revisit it again
 
 				auto buildValidOutgoingNodes = [&pairs](u8 a) -> BitBoard {
@@ -1060,6 +1034,17 @@ namespace dd
 			return p.result.size() > 0;
 		}
 
+		bool uniqueRectangle(SudokuContext& p) {
+			p.result.Technique = Techniques::UniqueRectangle;
+
+			// if we have 4 nodes, forming a rectangle, over 2 rows AND 2 columns AND 2 blocks
+			//BoardBits::
+
+			const BitBoard nodes = BoardBits::nodesWithCandidateCountBetweenXY(p.AllCandidates, 2, 2);
+
+			return p.result.size() > 0;
+		}
+
 		using TechniqueFunction = std::function<bool(SudokuContext& p)>;
 		std::vector<TechniqueFunction> allTechniques() {
 			std::vector<TechniqueFunction> out = {
@@ -1071,7 +1056,8 @@ namespace dd
 				pointingPair,
 				boxLineReduction,
 				xWing, yWing,
-				singleChain
+				singleChain,
+				uniqueRectangle,
 			};
 			return out;
 		}

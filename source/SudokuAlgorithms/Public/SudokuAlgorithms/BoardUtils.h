@@ -299,7 +299,76 @@ namespace dd
 			}
 			return false;
 		}
+
+		// If a candidate appears EXACTLY twice in a unit, then those two candidates are called a conjugate pair.
+		struct ConjugatePair {
+			u8 node1;
+			u8 node2;
+			u8 candidateId;
+			u8 dimensionId;
+		};
+
+		// If a candidate appears EXACTLY twice in a unit, then those two candidates are called a conjugate pair.
+		std::vector<ConjugatePair> findConjugatePairsForCandidate(const SudokuContext& p, u8 candidateId) {
+			std::vector<ConjugatePair> pairs;
+
+			const BitBoard& candidates = p.AllCandidates[candidateId];
+			for (u8 i = 0; i < 27; ++i) {
+				const BitBoard inDimension = p.AllDimensions[i] & candidates;
+				const u8 numOccurances = inDimension.countSetBits();
+				if (numOccurances == 2) {
+					u8 nodes[2];
+					inDimension.fillSetBits(nodes);
+
+					pairs.push_back(ConjugatePair{ nodes[0], nodes[1], candidateId, i });
+				}
+			}
+
+			return pairs;
+		}
+
+		// #todo - performance measure this vs nodesWithCandidateCountBetweenXY(2,2)
+		//BitBoard nodesWithExactlyTwoCandidates(const BoardBits::BitBoards9& candidateBoards) {
+		//	BitBoard invalidated;
+		//	BitBoard hitOnce;
+		//	BitBoard hitTwice;
+
+		//	for (uint i = 0; i < 9; ++i) {
+		//		BitBoard overlap = candidateBoards[i] & hitOnce;
+		//		if (overlap.notEmpty()) {
+		//			invalidated |= (overlap & hitTwice); //
+		//			hitTwice |= overlap;
+		//		}
+		//		hitOnce |= candidateBoards[i];
+		//	}
+
+		//	return hitTwice & (invalidated.invert());
+		//}
+
+		BitBoard nodesWithCandidateCountBetweenXY(const BoardBits::BitBoards9& candidateBoards, int min, int max) {
+			BitBoard invalidated;
+			BitBoard prevHits[9];
+			BitBoard overlaps[9];
+
+			for (uint i = 0; i < 9; ++i) {
+				const BitBoard& hitNow = candidateBoards[i];
+				for (int j = max; j > 0; --j) {
+					overlaps[j] = hitNow & prevHits[j];
+				}
+
+				overlaps[0] |= hitNow;
+				invalidated |= overlaps[max];
+
+				for (int j = max; j > 0; --j) {
+					prevHits[j] |= overlaps[j - 1];
+				}
+			}
+
+			return prevHits[min] & invalidated.invert();
+		}
 	}
+
+	/////////////////////////////////////////////////////////////////////////////////
 
 	namespace BoardUtils {
 		u16 mergeCandidateMasks(const SudokuContext& p, u8* nodeIds, u8 count) {
@@ -345,17 +414,18 @@ namespace dd
 			});
 		}
 
-		BitBoard boardWhereCandidateCountInRange(const SudokuContext& p, int maxCandidates, int minCandidates = 2) {
-			BitBoard potentials;
-			for (uint i = 0; i < BoardSize; ++i) {
-				Node n = p.b.Nodes[i];
-				const u8 numCandidates = countCandidates(n.getCandidates());
-				if (numCandidates >= minCandidates && numCandidates <= maxCandidates) {
-					potentials.setBit(i);
-				}
-			}
-			return potentials;
-		}
+		// #todo : measure performance impact on this vs "inRange"
+		//BitBoard boardWhereCandidateCountInRange(const SudokuContext& p, int maxCandidates, int minCandidates = 2) {
+		//	BitBoard potentials;
+		//	for (uint i = 0; i < BoardSize; ++i) {
+		//		Node n = p.b.Nodes[i];
+		//		const u8 numCandidates = countCandidates(n.getCandidates());
+		//		if (numCandidates >= minCandidates && numCandidates <= maxCandidates) {
+		//			potentials.setBit(i);
+		//		}
+		//	}
+		//	return potentials;
+		//}
 
 		void countTimesEachCandidateOccur(u8* candidateCount, const SudokuContext& p, const BitBoard& affectedNodes) {
 			for (uint i = 0; i < 9; ++i) {
