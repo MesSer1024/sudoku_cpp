@@ -41,6 +41,10 @@ namespace dd
 		}
 	}
 
+	u8 countBits(u32 data) {
+		return static_cast<u8>(__popcnt(data));
+	}
+
 	u8 countCandidates(u16 mask) {
 		return static_cast<u8>(__popcnt16(mask));
 	}

@@ -15,7 +15,6 @@ namespace dd
 	struct Result;
 
 	constexpr uint BoardSize = 81u;
-	using BitAction = std::function<void(u32 bitIndex)>;
 
 	struct Candidates
 	{
@@ -283,7 +282,7 @@ namespace dd
 		}
 
 		void foreachSetBit(BitAction action) const {
-			u8 bitArr[BoardSize + 1]; // need one extra for overwrite protection
+			u8 bitArr[BoardSize + 1]; // need one extra for overwrite protection #todo : write test if this is necessary
 
 			const u8 end = fillSetBits(bitArr);
 			for (u8 i = 0; i < end; ++i) {
