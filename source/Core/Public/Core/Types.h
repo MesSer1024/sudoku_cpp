@@ -45,4 +45,12 @@ namespace dd
 
 		return static_cast<u8>(dest - target);
 	}
+
+	template <typename T>
+	bool testBit(const T data, u32 bit) {
+		const T flag = 1ULL << bit;
+		const bool isTrue = data & flag;
+		return isTrue;
+	}
+
 }

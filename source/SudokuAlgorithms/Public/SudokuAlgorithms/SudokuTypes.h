@@ -56,8 +56,8 @@ namespace dd
 
 		void candidatesSet(ValueType combinedMask) { bits.candidates = combinedMask; }
 		void candidatesRemoveSingle(ValueType candidate) { 
-			ValueType mask = ~(1 << candidate);
-			bits.candidates &= mask; 
+			ValueType with2nodes = ~(1 << candidate);
+			bits.candidates &= with2nodes; 
 		}
 
 		void candidatesRemoveBySolvedMask(ValueType solvedMask) {
@@ -243,8 +243,8 @@ namespace dd
 		bool test(uint bitIndex) const {
 			const u8 arrIdx = bitIndex >= 64 ? 1 : 0;
 			bitIndex = bitIndex % 64;
-			const u64 mask = 1ULL << bitIndex;
-			const bool flag = bits[arrIdx] & mask;
+			const u64 with2nodes = 1ULL << bitIndex;
+			const bool flag = bits[arrIdx] & with2nodes;
 			return flag;
 		}
 

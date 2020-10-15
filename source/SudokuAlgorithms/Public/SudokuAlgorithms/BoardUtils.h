@@ -45,8 +45,8 @@ namespace dd
 		return static_cast<u8>(__popcnt(data));
 	}
 
-	u8 countCandidates(u16 mask) {
-		return static_cast<u8>(__popcnt16(mask));
+	u8 countCandidates(u16 with2nodes) {
+		return static_cast<u8>(__popcnt16(with2nodes));
 	}
 
 	u16 candidateIdToMask(u8 candidateId) {
@@ -361,13 +361,13 @@ namespace dd
 				}
 
 				overlaps[0] |= hitNow;
-				invalidated |= overlaps[max];
 
 				for (int j = max; j > 0; --j) {
 					prevHits[j] |= overlaps[j - 1];
 				}
 			}
 
+			invalidated |= overlaps[max];
 			return prevHits[min] & invalidated.invert();
 		}
 	}
@@ -376,11 +376,11 @@ namespace dd
 
 	namespace BoardUtils {
 		u16 mergeCandidateMasks(const SudokuContext& p, u8* nodeIds, u8 count) {
-			u16 mask = 0;
+			u16 with2nodes = 0;
 			for (uint i = 0; i < count; ++i) {
-				mask |= p.b.Nodes[nodeIds[i]].getCandidates();
+				with2nodes |= p.b.Nodes[nodeIds[i]].getCandidates();
 			}
-			return mask;
+			return with2nodes;
 		}
 
 		BitBoard mergeCandidateBoards(const SudokuContext& p, u16 combinedMask) {
@@ -454,10 +454,10 @@ namespace dd
 	}
 
 	u16 buildValueMaskFromCandidateIds(const u16* ids, u32 count) {
-		u16 mask = 0;
+		u16 with2nodes = 0;
 		for (uint i = 0; i < count; ++i)
-			mask |= 1u << (ids[i] + 1); // ids are zero based
-		return mask;
+			with2nodes |= 1u << (ids[i] + 1); // ids are zero based
+		return with2nodes;
 	}
 
 	u16 toCandidateMask(u32 valueMask)
