@@ -79,6 +79,8 @@ namespace ddahlkvist::techniques
 	SUDOKULIB_PUBLIC bool pointingPair(SudokuContext& p);
 
 	SUDOKULIB_PUBLIC bool boxLineReduction(SudokuContext& p);
+	
+	SUDOKULIB_PUBLIC bool singleChain(SudokuContext& p);
 
 	SUDOKULIB_PUBLIC bool xWing(SudokuContext& p);
 
