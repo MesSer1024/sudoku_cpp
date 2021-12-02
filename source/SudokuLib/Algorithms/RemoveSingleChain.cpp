@@ -6,7 +6,7 @@
 
 namespace ddahlkvist::techniques
 {
-	bool singleChain(SudokuContext& p) {
+	bool removeSingleChain(SudokuContext& p) {
 		p.result.Technique = Techniques::SingleChain;
 
 		// If a candidate appears EXACTLY twice in a unit, then those two candidates are called a conjugate pair.

@@ -6,7 +6,7 @@
 
 namespace ddahlkvist::techniques
 {
-		bool boxLineReduction(SudokuContext& p) {
+		bool removeBoxLineReduction(SudokuContext& p) {
 			p.result.Technique = Techniques::BoxLineReduction;
 
 			// this technique is related to looking at a column/row and making sure that a value MUST exist in that row.

@@ -88,7 +88,7 @@ namespace ddahlkvist::techniques
 		//}
 	}
 
-	bool uniqueRectangle(SudokuContext& p) {
+	bool removeUniqueRectangle(SudokuContext& p) {
 		p.result.Technique = Techniques::UniqueRectangle;
 
 		// if we have 4 nodes, forming a rectangle, over 2 rows AND 2 columns AND 2 blocks [with 2 candidates]

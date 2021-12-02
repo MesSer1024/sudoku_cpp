@@ -64,7 +64,7 @@ namespace ddahlkvist::techniques
 			return RectangleQueryResult{};
 		}
 
-		bool xWing(SudokuContext& p) {
+		bool removeXWing(SudokuContext& p) {
 			p.result.Technique = Techniques::X_Wing;
 
 			//When there are only two possible cells for a value in each of two different rows,

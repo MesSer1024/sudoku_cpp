@@ -6,7 +6,7 @@
 
 namespace ddahlkvist::techniques
 {
-	bool yWing(SudokuContext& p) {
+	bool removeYWing(SudokuContext& p) {
 		p.result.Technique = Techniques::Y_Wing;
 
 		// three different candidates (A, B, C)

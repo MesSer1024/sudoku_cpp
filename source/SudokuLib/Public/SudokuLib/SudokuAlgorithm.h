@@ -76,17 +76,17 @@ namespace ddahlkvist::techniques
 
 	SUDOKULIB_PUBLIC bool removeHiddenQuad(SudokuContext& p);
 
-	SUDOKULIB_PUBLIC bool pointingPair(SudokuContext& p);
+	SUDOKULIB_PUBLIC bool removePointingPair(SudokuContext& p);
 
-	SUDOKULIB_PUBLIC bool boxLineReduction(SudokuContext& p);
+	SUDOKULIB_PUBLIC bool removeBoxLineReduction(SudokuContext& p);
 	
-	SUDOKULIB_PUBLIC bool singleChain(SudokuContext& p);
+	SUDOKULIB_PUBLIC bool removeSingleChain(SudokuContext& p);
 
-	SUDOKULIB_PUBLIC bool xWing(SudokuContext& p);
+	SUDOKULIB_PUBLIC bool removeXWing(SudokuContext& p);
 
-	SUDOKULIB_PUBLIC bool yWing(SudokuContext& p);
+	SUDOKULIB_PUBLIC bool removeYWing(SudokuContext& p);
 
-	SUDOKULIB_PUBLIC bool uniqueRectangle(SudokuContext& p);
+	SUDOKULIB_PUBLIC bool removeUniqueRectangle(SudokuContext& p);
 
 	using TechniqueFunction = std::function<bool(SudokuContext& p)>;
 	SUDOKULIB_PUBLIC std::vector<TechniqueFunction> allTechniques();

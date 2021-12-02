@@ -6,7 +6,7 @@
 
 namespace ddahlkvist::techniques
 {
-		bool pointingPair(SudokuContext& p) {
+		bool removePointingPair(SudokuContext& p) {
 			p.result.Technique = Techniques::PointingPair;
 
 			// foreach block check candidates -> if candidate only exists 2-3 times in block

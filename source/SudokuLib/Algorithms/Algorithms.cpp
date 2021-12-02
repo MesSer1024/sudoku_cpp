@@ -25,11 +25,11 @@ namespace ddahlkvist::techniques
 			removeNakedPair, removeNakedTriplet,
 			removeHiddenPair, removeHiddenTriplet,
 			removeNakedQuad, removeHiddenQuad,
-			pointingPair,
-			boxLineReduction,
-			xWing, yWing,
-			singleChain,
-			uniqueRectangle,
+			removePointingPair,
+			removeBoxLineReduction,
+			removeXWing, removeYWing,
+			removeSingleChain,
+			removeUniqueRectangle,
 		};
 		return out;
 	}
