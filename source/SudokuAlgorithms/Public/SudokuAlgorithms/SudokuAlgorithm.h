@@ -787,11 +787,6 @@ namespace dd
 			u8 numYwings = 0;
 
 			const BitBoard nodesWithExactly2Candidates = BoardBits::nodesWithCandidateCountBetweenXY(p.AllCandidates, 2, 2);
-			const BitBoard nodesWithExactly2Candidates2 = BoardBits::nodesWithExactlyTwoCandidates(p.AllCandidates);
-
-			assert(nodesWithExactly2Candidates == nodesWithExactly2Candidates2);
-
-			printCandidates(p.b, nodesWithExactly2Candidates);
 
 			BitBoard specificCandidates[9];
 			u8 numSpecificCandidates[9];
