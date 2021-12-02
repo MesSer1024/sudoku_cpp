@@ -54,8 +54,6 @@ namespace ddahlkvist
 		EXPECT_TRUE(hasC4 == false);
 		EXPECT_TRUE(exceptC4 == false);
 		EXPECT_TRUE(exceptC4c8 == true);
-
-		printf("Validated candidates!\n");
 	}
 
 	TEST_F(SudokuLibFixture, validateBuildBoardFromLayout)
