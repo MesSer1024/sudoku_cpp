@@ -11,8 +11,8 @@ namespace dd
 	static Techniques g_techniqueUsedInIteration[MaxIterations];
 	static u32 g_numIterations;
 
-	constexpr char* LineSymbol{ "-----------------\n" };
-	constexpr char* EmptyNode{ "." };
+	constexpr char const* LineSymbol{ "-----------------\n" };
+	constexpr char const* EmptyNode{ "." };
 
 	void validateNoDuplicates(const Board& b) {
 		auto allDimensions = BoardBits::AllDimensions();
@@ -79,13 +79,23 @@ namespace dd
 		cout << endl << LineSymbol;
 	}
 
-	void printCandidates(Board& b) {
+	void printCandidates(Board& b, const BitBoard& checkMask) {
 		using namespace std;
 		cout << endl << LineSymbol << endl;
 		uint i = 0;
+
 		for (const Node& n : b.Nodes) {
-			if (!n.isSolved()) {
+			const bool validate = checkMask.test(i);
+			if (validate && !n.isSolved()) {
+				u8 candidates[9];
+				u32 numCandidates = n.fillCandidateIds(candidates);
+
+				printf("\nidx=%u candidates:%u = {", i, numCandidates);
+				for (uint i = 0; i < numCandidates; ++i)
+					printf("%s%u", (i>0 ? ",":""), candidates[i]);
+				printf("}");
 			}
+			i++;
 		}
 	}
 }

@@ -14,6 +14,7 @@ workspace "SudokuGuider"
 
    filename "SudokuGuider"
    language "C++"
+   cppdialect "C++20"
    configurations { "Debug", "Release" }
    platforms { "Static", "DLL" }
    architecture "x64"   

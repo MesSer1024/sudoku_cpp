@@ -103,14 +103,38 @@ int main()
 
 	Board boards[1000];
 	const u32 numBoards = FillBoards(boards, GetRawBoards());
-	
-	u32 i = 0;
-	
+
+	// working one specfic board
+	{
+		const int boardIdx = 21;
+		Board& board = boards[boardIdx];
+		Result outcome;
+
+		bool solved = solveBoard(board, outcome);
+
+		if (PrintVerbose)
+		{
+			printSudokuBoard(board);
+			printCandidateOutput(Techniques::NakedPair);
+
+			if (solved)
+				validateSolvedCorectly(board);
+			else
+				validateNoDuplicates(board);
+
+			cout << "BoardIndex: " << boardIdx << "\t\t" << (solved ? "solved" : "unsolved") << endl;
+		}
+	}
+
+	// run all
+	u32 i = 0;	
+	u32 solvedCount = 0;
 	for (; i < numBoards; ++i) {
 		Board& board = boards[i];
 		Result outcome;
 
 		bool solved = solveBoard(board, outcome);
+		solvedCount += solved;
 		
 		if (PrintVerbose)
 		{
@@ -131,7 +155,7 @@ int main()
 
 	cout << "-------------------" << endl;
 	cout << "DONE!!" << endl;
-	cout << "Iterated over: " << i << " boards" << endl;
+	printf("DONE: Solved=%u, iterated=%u\n", solvedCount, i);
 	cin.get();
 	return 0;
 }

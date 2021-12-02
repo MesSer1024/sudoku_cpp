@@ -349,10 +349,30 @@ namespace dd
 		//	return hitTwice & (invalidated.invert());
 		//}
 
+		BitBoard nodesWithExactlyTwoCandidates(const BoardBits::BitBoards9& candidateBoards) {
+			BitBoard invalidated;
+			BitBoard hitOnce;
+			BitBoard hitTwice;
+
+			for (uint i = 0; i < 9; ++i) {
+				BitBoard overlap = candidateBoards[i] & hitOnce;
+				if (overlap.notEmpty()) {
+					invalidated |= (overlap & hitTwice); //
+					hitTwice |= overlap;
+				}
+				hitOnce |= candidateBoards[i];
+			}
+
+			return hitTwice & (invalidated.invert());
+		}
+		 
 		BitBoard nodesWithCandidateCountBetweenXY(const BoardBits::BitBoards9& candidateBoards, int min, int max) {
 			BitBoard invalidated;
 			BitBoard prevHits[9];
 			BitBoard overlaps[9];
+
+			if (min == 2 && max == 2)
+				return nodesWithExactlyTwoCandidates(candidateBoards);
 
 			for (uint i = 0; i < 9; ++i) {
 				const BitBoard& hitNow = candidateBoards[i];

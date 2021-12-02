@@ -310,4 +310,7 @@ namespace dd
 	{
 		validateSoloCandidateTechnique();
 	}
+
+	//template<typename Action>
+	//void foreach
 }
