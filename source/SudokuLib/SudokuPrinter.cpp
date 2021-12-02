@@ -5,7 +5,7 @@
 #include <SudokuLib/SudokuTypes.h>
 #include <SudokuLib/TechniqueMeta.h>
 #include <SudokuLib/SudokuPrinter.h>
-#include <SudokuLib/BoardUtils.h>
+#include <BoardUtils.h>
 
 namespace ddahlkvist 
 {

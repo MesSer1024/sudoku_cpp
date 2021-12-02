@@ -392,7 +392,7 @@ namespace ddahlkvist
 		const BitBoard Unsolved;
 		const BoardBits::BitBoards9 AllCandidates;
 		const BoardBits::BitBoards27 AllDimensions;
-		Span<BitBoard> getBlocks() { return Span<BitBoard>(&AllDimensions[18], 9); }
+		inline Span<BitBoard> getBlocks() { return Span<BitBoard>(&AllDimensions[18], 9); }
 	};
 
 	struct SolveLedger
@@ -453,4 +453,9 @@ namespace ddahlkvist
 		BitBoard _dirty;
 	};
 
+}
+
+namespace ddahlkvist
+{
+	SUDOKULIB_PUBLIC SudokuContext buildContext(Board& b, Result& r);
 }

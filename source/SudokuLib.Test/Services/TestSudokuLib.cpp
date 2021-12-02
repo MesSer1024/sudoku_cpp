@@ -8,7 +8,7 @@
 #include <Core/Types.h>
 #include <SudokuLib/SudokuTypes.h>
 #include <SudokuLib/SudokuAlgorithm.h>
-#include <SudokuLib/BoardUtils.h>
+#include <BoardUtils.h>
 
 namespace ddahlkvist
 {
@@ -32,6 +32,9 @@ namespace ddahlkvist
 
 	TEST_F(SudokuLibFixture, isInvoked) {
 		EXPECT_EQ(_maxValue, 17u);
+		Board board;
+		Result result;
+		auto data = buildContext(board, result);
 	}
 
 	TEST_F(SudokuLibFixture, validateCandidates)

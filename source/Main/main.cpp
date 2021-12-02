@@ -7,21 +7,9 @@
 #include <SudokuLib/SudokuTypes.h>
 #include <SudokuLib/SudokuAlgorithm.h>
 #include <SudokuLib/SudokuPrinter.h>
-#include <SudokuLib/BoardUtils.h>
 
 namespace ddahlkvist
 {
-	SudokuContext buildContext(Board& b, Result& r) {
-		return SudokuContext{
-			b,
-			r,
-			BoardBits::bitsSolved(b),
-			BoardBits::bitsUnsolved(b),
-			BoardBits::buildCandidateBoards(b),
-			BoardBits::AllDimensions()
-		};
-	}
-
 	bool runTechniques(Board& b, Result& result) {
 		SudokuContext context = buildContext(b, result);
 

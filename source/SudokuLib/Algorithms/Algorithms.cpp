@@ -13,7 +13,7 @@
 #include <cassert>
 
 #include <SudokuLib/SudokuAlgorithm.h>
-#include <SudokuLib/BoardUtils.h>
+#include <BoardUtils.h>
 #include <SudokuLib/sudokulib_module.h>
 #include <SudokuLib/SudokuTypes.h>
 #include <SudokuLib/TechniqueMeta.h>
