@@ -6,14 +6,14 @@ namespace ddahlkvist
 {
 	SudokuContext buildContext(Board& b, Result& r) 
 	{
-		return SudokuContext{
-			b,
-			r,
-			BoardBits::bitsSolved(b),
-			BoardBits::bitsUnsolved(b),
-			BoardBits::buildCandidateBoards(b),
-			BoardBits::AllDimensions()
-		};
+		SudokuContext ctx{ b, r };
+
+		BoardBits::fillBitsSolved(ctx.SolvedValues, ctx.Solved, b);
+		BoardBits::buildCandidateBoards(ctx.AllCandidates, b);
+		BoardBits::AllDimensions(ctx.AllDimensions);
+		ctx.Unsolved = ctx.Solved.invert();
+
+		return ctx;
 	}
 
 }

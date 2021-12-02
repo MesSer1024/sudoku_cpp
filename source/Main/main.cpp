@@ -16,7 +16,7 @@ namespace ddahlkvist
 		if (context.Unsolved == BitBoard{})
 			return true;
 
-		auto techniques = techniques::allTechniques();
+		auto&& techniques = techniques::allTechniques();
 		for (auto i = 0ULL, end = techniques.size(); i < end; ++i) {
 			techniques::TechniqueFunction& technique = techniques[i];
 			if (technique(context))
@@ -25,49 +25,64 @@ namespace ddahlkvist
 		return false;
 	}
 
-	bool solveBoard(Board& b, Result& result)	{
+	bool solveBoard(Board& b, Result& r)	{
 		// do an early iteration to fill candidates and remove the known nodes (from neighbouring solved nodes)
 		{
-			SudokuContext context = buildContext(b, result);
+			SudokuContext context = buildContext(b, r);
 			techniques::fillUnsolvedWithNonNaiveCandidates(context);
 		}
 
-		SolveLedger& ledger = result.ledger;
-
-		u32 iteration = 0;
-
-		bool iterateAgain = true;
-		while (iterateAgain && iteration < ledger.MaxEntries) {
-#ifdef DD_DEBUG
-			b.updateDebugPretty();
-#endif
-			result.reset();
-			if (runTechniques(b, result)) {
-				ledger.numNodesChangedInIteration[iteration] = static_cast<u8>(result.size());
-				ledger.techniqueUsedInIteration[iteration] = result.Technique;
-			}
-			iteration++;
-			iterateAgain = result.size() != 0;
-		}
-
-		u32 postNumSolved = 0;
-		for (Node& n : b.Nodes)
+		// let each board be solved 100 times to make sure we have more performance data
+		bool isSolved = false;
+		for (uint i = 0; i < 100; ++i)
 		{
-			if (n.isSolved())
-				postNumSolved++;
+			Board localBoard = b;
+			Result localResult = r;
+			SolveLedger& ledger = localResult.ledger;
+
+			u32 iteration = 0;
+
+			bool iterateAgain = true;
+			while (iterateAgain && iteration < ledger.MaxEntries) {
+#ifdef DD_DEBUG
+				localBoard.updateDebugPretty();
+#endif
+				localResult.reset();
+				if (runTechniques(localBoard, localResult)) {
+					ledger.numNodesChangedInIteration[iteration] = static_cast<u8>(localResult.size());
+					ledger.techniqueUsedInIteration[iteration] = localResult.Technique;
+				}
+				iteration++;
+				iterateAgain = localResult.size() != 0;
+			}
+
+			u32 postNumSolved = 0;
+			for (Node& n : localBoard.Nodes)
+			{
+				if (n.isSolved())
+					postNumSolved++;
+			}
+
+			if (i == 99)
+			{
+				isSolved = postNumSolved == BoardSize;
+				b = localBoard;
+				r = localResult;			
+			}
 		}
-		return postNumSolved == BoardSize;
+
+		return isSolved;
 	}
 }
 
 int main()
 {
 #ifdef DD_DEBUG
-	const bool PrintVerbose = true;
-	const bool StopOnFirstUnsolved = false;
+	constexpr bool PrintVerbose = true;
+	constexpr bool StopOnFirstUnsolved = false;
 #else
-	const bool PrintVerbose = false;
-	const bool StopOnFirstUnsolved = false;
+	constexpr bool PrintVerbose = false;
+	constexpr bool StopOnFirstUnsolved = false;
 #endif
 
 	using namespace std;
@@ -108,7 +123,7 @@ int main()
 		bool solved = solveBoard(board, outcome);
 		solvedCount += solved;
 		
-		if (PrintVerbose)
+		if constexpr (PrintVerbose)
 		{
 			printSudokuBoard(board);
 			printCandidateOutput(Techniques::NakedPair, outcome.ledger);

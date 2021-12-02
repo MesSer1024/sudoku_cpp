@@ -141,14 +141,22 @@ namespace ddahlkvist
 			assert(p < MaxPrettyChars);
 		}
 
+		Board() = default;
+
+		Board(const Board& other)
+		{
+			memcpy(this->raw, &other.raw[0], sizeof(char) * BoardSize);
+			memcpy(this->Nodes, &other.Nodes[0], sizeof(Node) * BoardSize);
+		}
+
 		void operator=(const Board& other)
 		{
 			memcpy(this->raw, &other.raw[0], sizeof(char) * BoardSize);
 			memcpy(this->Nodes, &other.Nodes[0], sizeof(Node) * BoardSize);
 		}
 
-		Node& begin() { return Nodes[0]; }
-		Node& end() { return Nodes[81]; }
+		//Node& begin() { return Nodes[0]; }
+		//Node& end() { return Nodes[81]; }
 
 		bool operator==(const Board& other) const
 		{
@@ -387,10 +395,12 @@ namespace ddahlkvist
 		Board& b;
 		Result& result;
 
-		const BitBoard Solved;
-		const BitBoard Unsolved;
-		const BoardBits::BitBoards9 AllCandidates;
-		const BoardBits::BitBoards27 AllDimensions;
+		BoardBits::BitBoards9 SolvedValues;
+
+		BitBoard Solved;		// TODO: Remove
+		BitBoard Unsolved;	// TODO: Remove
+		BoardBits::BitBoards9 AllCandidates;
+		BoardBits::BitBoards27 AllDimensions;
 		inline Span<BitBoard> getBlocks() { return Span<BitBoard>(&AllDimensions[18], 9); }
 	};
 
@@ -411,36 +421,52 @@ namespace ddahlkvist
 			BitBoard newDirty = (affectedNodes ^ _dirty) & affectedNodes;
 			_dirty |= affectedNodes;
 
+#ifdef DD_FINAL
+			newDirty.foreachSetBit([&](u32 bitIndex) {
+				ChangeCount++;
+			});
+#else
 			newDirty.foreachSetBit([nodes, &Changes = Changes](u32 bitIndex) {
 				Changes.push_back({ static_cast<u8>(bitIndex), nodes[bitIndex] });
 			});
+#endif
 		}
 
 		void append(Node old, u8 id)
 		{
 			if (!_dirty.test(id))
+#ifdef DD_FINAL
+				ChangeCount++;
+#else
 				Changes.push_back({ id, old });
+#endif
+
 		}
 
 		Change fetch(uint idx)
 		{
+#ifdef DD_FINAL
+			return Change{}; // dunno only used in teset?
+#else
 			return Changes[idx];
+#endif
+
 		}
 
 		uint size() {
+#ifdef DD_FINAL
+			return ChangeCount;
+#else
 			return static_cast<uint>(Changes.size());
-		}
-
-		bool operator()() {
-			return Changes.size() > 0;
-		}
-
-		BitBoard pullDirty() {
-			return _dirty;
+#endif
 		}
 
 		void reset() {
+#ifdef DD_FINAL
+			ChangeCount = 0;
+#else
 			Changes.clear();
+#endif
 			_dirty = {};
 			Technique = {};
 		}
@@ -448,7 +474,11 @@ namespace ddahlkvist
 		Techniques Technique{ };
 		SolveLedger ledger;
 	private:
+#ifdef DD_FINAL
+		u32 ChangeCount = 0;
+#else
 		std::vector<Change> Changes;
+#endif
 		BitBoard _dirty;
 	};
 

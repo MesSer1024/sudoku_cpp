@@ -114,14 +114,21 @@ namespace ddahlkvist
 			return blocks;
 		}
 
-		constexpr BitBoards27 AllDimensions() {
-			BitBoards27 dimensions;
-			for (uint i = 0; i < 9; ++i) {
-				dimensions[i] = BitRow(i);
-				dimensions[i + 9] = BitColumn(i);
-				dimensions[i + 18] = BitBlock(i);
-			}
-			return dimensions;
+		inline void AllDimensions(BitBoards27& dimensions) {
+			auto populate = []() {
+				BitBoards27 out;
+
+				for (uint i = 0; i < 9; ++i) {
+					out[i] = BitRow(i);
+					out[i + 9] = BitColumn(i);
+					out[i + 18] = BitBlock(i);
+				}
+
+				return out;
+			};
+
+			static BitBoards27 CalculatedDimensions = populate();
+			dimensions = CalculatedDimensions;
 		}
 
 		constexpr BitBoard NeighboursForNode(uint nodeId) {
@@ -197,38 +204,33 @@ namespace ddahlkvist
 
 		//////////////////////////////////////////////////////
 
-		inline SudokuBitBoard bitsSolved(const Board& b)
+		inline void fillBitsSolved(BitBoards9& out9, BitBoard& outAllSolved, const Board& b)
 		{
-			SudokuBitBoard bits;
 			for (uint i = 0; i < BoardSize; ++i)
+			{
 				if (b.Nodes[i].isSolved())
-					bits.setBit(i);
-			return bits;
+				{
+					auto value = b.Nodes[i].getValue();
+					out9[value-1].setBit(i);
+				}
+			}
+
+			for (auto& board : out9)
+				outAllSolved |= board;
 		}
 
-		inline SudokuBitBoard bitsUnsolved(const Board& b)
-		{
-			SudokuBitBoard bits;
-			for (uint i = 0; i < BoardSize; ++i)
-				bits.modifyBit(i, !b.Nodes[i].isSolved());
-			return bits;
-		}
-
-		inline BitBoards9 buildCandidateBoards(Board& b) {
-			BitBoards9 out;
+		inline void buildCandidateBoards(BitBoards9& outCandidates, Board& b) {
 
 			for (uint i = 0; i < BoardSize; ++i) {
 				if (!b.Nodes[i].isSolved()) {
 					u16 candidate = b.Nodes[i].getCandidates();
 					for (u16 c = 0; c < 9; ++c) {
 						if (candidate & AllCandidatesArray[c]) {
-							out[c].setBit(i);
+							outCandidates[c].setBit(i);
 						}
 					}
 				}
 			}
-
-			return out;
 		}
 
 		inline u8 rowToDimension(u32 i) { return static_cast<u8>(i); }

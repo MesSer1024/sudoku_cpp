@@ -41,9 +41,15 @@ namespace ddahlkvist
 
 
 	void validateNoDuplicates(const Board& b) {
-		auto allDimensions = BoardBits::AllDimensions();
+		BoardBits::BitBoards27 allDimensions;
+		BoardBits::BitBoards9 allSolved;
+		BitBoard solved;
+		BoardBits::AllDimensions(allDimensions);
+		BoardBits::fillBitsSolved(allSolved, solved, b);
+
+
 		for (auto dimension : allDimensions) {
-			const BitBoard solvedNodes = (BoardBits::bitsSolved(b) & dimension);
+			const BitBoard solvedNodes = (solved & dimension);
 			const u32 solvedNodeCount = solvedNodes.countSetBits();
 			const u32 solvedValues = countCandidates(BoardUtils::buildValueMaskFromSolvedNodes(b.Nodes, solvedNodes));
 			if(solvedValues != solvedNodeCount)
@@ -52,7 +58,11 @@ namespace ddahlkvist
 	}
 
 	void validateSolvedCorectly(const Board& b) {
-		assert(BoardBits::bitsUnsolved(b).countSetBits() == 0);
+		BoardBits::BitBoards9 allSolved;
+		BitBoard solved;
+		BoardBits::fillBitsSolved(allSolved, solved, b);
+
+		assert(solved.invert().countSetBits() == 0);
 		auto rows = BoardBits::AllRows();
 		auto cols = BoardBits::AllColumns();
 		auto blocks = BoardBits::AllBlocks();

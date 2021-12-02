@@ -218,8 +218,12 @@ namespace ddahlkvist
 		Board b = Board::fromString(ExampleBoardRaw);
 
 		{
-			BoardBits::SudokuBitBoard bitBoardSolved = BoardBits::bitsSolved(b);
-			BoardBits::SudokuBitBoard bitBoardUnsolved = BoardBits::bitsUnsolved(b);
+			BoardBits::BitBoards9 valueSolved;
+			BoardBits::SudokuBitBoard bitBoardSolved;
+			BoardBits::SudokuBitBoard bitBoardUnsolved;
+
+			BoardBits::fillBitsSolved(valueSolved, bitBoardSolved, b);
+			bitBoardUnsolved = bitBoardSolved.invert();
 			for (uint i = 0; i < BoardSize; ++i)
 			{
 				if (b.Nodes[i].isSolved()) {
@@ -242,7 +246,10 @@ namespace ddahlkvist
 			EXPECT_TRUE(!b.Nodes[ModifiedNode].isSolved());
 			b.Nodes[ModifiedNode].candidatesSet(c1Mask);
 
-			const BitBoard bitsWithC1 = BoardBits::buildCandidateBoards(b)[0];
+			BoardBits::BitBoards9 candidates;
+			BoardBits::buildCandidateBoards(candidates, b);
+
+			const BitBoard bitsWithC1 = candidates[0];
 
 			EXPECT_TRUE(bitsWithC1.countSetBits() == 1);
 			EXPECT_TRUE(bitsWithC1.test(ModifiedNode));
@@ -259,10 +266,10 @@ namespace ddahlkvist
 			Board board;
 			board.Nodes[0].solve(1);
 
-			SudokuContext ctx{ board, ignoredResult, BoardBits::bitsSolved(board), BoardBits::bitsUnsolved(board),{}, BoardBits::AllDimensions() };
+			SudokuContext ctx = buildContext(board, ignoredResult);
 			techniques::fillUnsolvedWithNonNaiveCandidates(ctx);
 
-			const BitBoard unsolved = BoardBits::bitsUnsolved(board);
+			const BitBoard unsolved = ctx.Unsolved;
 			BitBoard unsolvedNeighbours = BoardBits::NeighboursForNode(0) & unsolved;
 			const u16 ExpectedCandidates = Candidates::All & (~Candidates::c1);
 			const u32 numUnsolvedNeighbours = unsolvedNeighbours.countSetBits();
@@ -279,10 +286,10 @@ namespace ddahlkvist
 			board.Nodes[1].solve(2);
 			board.Nodes[9].solve(2);
 
-			SudokuContext ctx{ board, ignoredResult, BoardBits::bitsSolved(board), BoardBits::bitsUnsolved(board),{}, BoardBits::AllDimensions() };
+			SudokuContext ctx = buildContext(board, ignoredResult);
 			techniques::fillUnsolvedWithNonNaiveCandidates(ctx);
 
-			const BitBoard unsolved = BoardBits::bitsUnsolved(board);
+			const BitBoard unsolved = ctx.Unsolved;
 			const BitBoard unsolvedNeighbours = BoardBits::NeighboursForNode(0) & unsolved;
 			const u16 ExpectedCandidates = Candidates::All & (~(Candidates::c1 | Candidates::c2));
 			const u32 numUnsolvedNeighbours = unsolvedNeighbours.countSetBits();
@@ -300,14 +307,7 @@ namespace ddahlkvist
 		Result outcome;
 		board.Nodes[64].candidatesSet(1 << 5);
 
-		SudokuContext context{
-			board,
-			outcome,
-			BoardBits::bitsSolved(board),
-			BoardBits::bitsUnsolved(board),
-			BoardBits::buildCandidateBoards(board),
-			BoardBits::AllDimensions()
-		};
+		SudokuContext context = buildContext(board, outcome);
 
 		const bool modified = techniques::removeNakedSingle(context);
 		EXPECT_TRUE(modified);

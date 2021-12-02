@@ -1,0 +1,23 @@
+|Function Name|Total CPU \[unit, %\]|Self CPU \[unit, %\]|Module|Category|
+|-|-|-|-|-|
+| + SudokuSolver.exe \(PID: 19840\)|306 \(100,00 %\)|0 \(0,00 %\)|Multiple modules||
+|\| + \[External Code\]|306 \(100,00 %\)|0 \(0,00 %\)|Multiple modules|IO \| Kernel|
+|\|\| + \_\_scrt\_common\_main\_seh|306 \(100,00 %\)|0 \(0,00 %\)|SudokuSolver.exe|Kernel|
+|\|\|\| + main|306 \(100,00 %\)|0 \(0,00 %\)|SudokuSolver.exe|Kernel|
+|\|\|\|\| + ddahlkvist::solveBoard|306 \(100,00 %\)|2 \(0,65 %\)|SudokuSolver.exe|Kernel|
+|\|\|\|\|\| - ddahlkvist::buildContext|96 \(31,37 %\)|0 \(0,00 %\)|SudokuLib.dll||
+|\|\|\|\|\| - ddahlkvist::techniques::removeNaiveCandidates|50 \(16,34 %\)|39 \(12,75 %\)|SudokuLib.dll||
+|\|\|\|\|\| - ddahlkvist::techniques::removeNakedCandidatesInternal|37 \(12,09 %\)|4 \(1,31 %\)|SudokuLib.dll|Kernel|
+|\|\|\|\|\| - ddahlkvist::techniques::removeBoxLineReduction|26 \(8,50 %\)|26 \(8,50 %\)|SudokuLib.dll||
+|\|\|\|\|\| - ddahlkvist::techniques::removeSingleChain|19 \(6,21 %\)|5 \(1,63 %\)|SudokuLib.dll|Kernel|
+|\|\|\|\|\| - ddahlkvist::techniques::removeXWing|14 \(4,58 %\)|14 \(4,58 %\)|SudokuLib.dll||
+|\|\|\|\|\| - ddahlkvist::techniques::allTechniques|12 \(3,92 %\)|3 \(0,98 %\)|SudokuLib.dll|Kernel|
+|\|\|\|\|\| - ddahlkvist::techniques::removeNakedSingle|10 \(3,27 %\)|8 \(2,61 %\)|SudokuLib.dll||
+|\|\|\|\|\| - ddahlkvist::techniques::removePointingPair|9 \(2,94 %\)|7 \(2,29 %\)|SudokuLib.dll||
+|\|\|\|\|\| - ddahlkvist::techniques::removeHiddenQuad|7 \(2,29 %\)|0 \(0,00 %\)|SudokuLib.dll||
+|\|\|\|\|\| - ddahlkvist::techniques::removeHiddenTriplet|7 \(2,29 %\)|0 \(0,00 %\)|SudokuLib.dll|Kernel|
+|\|\|\|\|\| - ddahlkvist::techniques::removeHiddenPair|6 \(1,96 %\)|0 \(0,00 %\)|SudokuLib.dll|Kernel|
+|\|\|\|\|\| - \[External Code\]|4 \(1,31 %\)|4 \(1,31 %\)|Multiple modules|Kernel|
+|\|\|\|\|\| - ddahlkvist::techniques::removeHiddenSingle|3 \(0,98 %\)|3 \(0,98 %\)|SudokuLib.dll||
+|\|\|\|\|\| - ddahlkvist::techniques::removeYWing|3 \(0,98 %\)|0 \(0,00 %\)|SudokuLib.dll||
+|\|\|\|\|\| - ddahlkvist::techniques::removeUniqueRectangle|1 \(0,33 %\)|1 \(0,33 %\)|SudokuLib.dll||

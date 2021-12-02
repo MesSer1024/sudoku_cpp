@@ -19,7 +19,7 @@ namespace ddahlkvist::techniques
 	// each of the different techniques are residing within their own file that is forwarded from this point
 
 	std::vector<TechniqueFunction> allTechniques() {
-		std::vector<TechniqueFunction> out = {
+		static std::vector<TechniqueFunction> out = {
 			removeNaiveCandidates,
 			removeNakedSingle, removeHiddenSingle,
 			removeNakedPair, removeNakedTriplet,
