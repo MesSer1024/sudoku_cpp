@@ -8,11 +8,10 @@
 #include <SudokuLib/SudokuTypes.h>
 #include <SudokuLib/SudokuAlgorithm.h>
 #include <SudokuLib/SudokuPrinter.h>
+#include <SudokuLib/BoardUtils.h>
 
 namespace ddahlkvist
 {
-
-
 	SudokuContext buildContext(Board& b, Result& r) {
 		return SudokuContext{
 			b,
@@ -74,32 +73,15 @@ namespace ddahlkvist
 	}
 }
 
-void runValidations()
-{
-	using namespace ddahlkvist;
-
-	validateCandidates();
-	validateBuildBoardFromLayout();
-	validateBitHelpers();
-
-	validateCandidateAddAndSimpleRemoval();
-	validateTechniques();
-}
-
 int main()
 {
 #ifdef DD_DEBUG
 	const bool PrintVerbose = true;
-	const bool Validate = true;
 	const bool StopOnFirstUnsolved = false;
 #else
 	const bool PrintVerbose = false;
-	const bool Validate = false;
 	const bool StopOnFirstUnsolved = false;
 #endif
-
-	if(Validate)
-		runValidations();
 
 	using namespace std;
 	using namespace ddahlkvist;

@@ -2,7 +2,6 @@
 
 #include <vector>
 
-#include <SudokuLib/BoardUtils.h>
 #include <SudokuLib/sudokulib_module.h>
 #include <SudokuLib/SudokuTypes.h>
 
