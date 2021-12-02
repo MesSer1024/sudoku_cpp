@@ -372,55 +372,44 @@ namespace dd
 		}
 		 
 		BitBoard nodesWithCandidateCountBetweenXY(const BoardBits::BitBoards9& candidateBoards, int min, int max) {
+			assert(min != 0);
+			assert(max < 9);
 			// Algorithm description: We iterate over each candidate board [each bit indicates THAT NODE consider candidateX a possibility]
-			// That CandidateBoard can then be compared to other results in order to answer
-			// NodesThatHaveBeenHitMinimumTimes_1
-			// NodesThatHaveBeenHitMinimumTimes_2
-			// NodesThatHaveBeenHitMinimumTimes_3
+			// We track all nodes being hit at least once, at least twice, at least thrice etc...
+			// Then --> Each node previously hit 3 times + hit --> hit 4 times
+			// Then --> Each node previously hit 2 times + hit --> hit 3 times
+			// by appending to "hit_3_times_mask" we make sure that the aggregated result is correct
+			// iteration order of "top to bottom" solves the counting
 
-			BitBoard invalidated;
-			BitBoard prevHits[9];
-
-			auto getNodesKnownToHaveAtLeastCandidateCount = [&prevHits](u32 candidateCount) -> BitBoard& { return prevHits[candidateCount-1]; };
+			BitBoard nodesBeingHitAtLeastXTimes[9];
 
 			for (auto& nodesWithCandidateX : candidateBoards) {
-				//BitBoard& nodesWithCount1 = getNodesKnownToHaveAtLeastCandidateCount(1);
-				//BitBoard& nodesWithCount2 = getNodesKnownToHaveAtLeastCandidateCount(2);
-				//BitBoard& nodesWithCount3 = getNodesKnownToHaveAtLeastCandidateCount(3);
-				//
-				//const BitBoard newNodesWithCount3 = nodesWithCandidateX & nodesWithCount2;
-				//const BitBoard newNodesWithCount2 = nodesWithCandidateX & nodesWithCount1;
-				//nodesWithCount3 |= newNodesWithCount3;
-				//nodesWithCount2 |= newNodesWithCount2;
-
-				for (uint i = 9; i > 1; --i)
+				// update how many times each node has been populated with a candidate by iterating from "most" and comparing to "most-1"
+				// for correctness we should go from 9 --> 0, but since we know that we do not need to track orders above the treshold [max] we can just ignore any higher values
+				for (uint i = max; i > 0; --i)
 				{
-					BitBoard& nodesWithCandidateCount_i = getNodesKnownToHaveAtLeastCandidateCount(i);
-					BitBoard& nodesWithPrevCandidateCount = getNodesKnownToHaveAtLeastCandidateCount(i-1);
+					BitBoard& nodesWithCandidateCount_i = nodesBeingHitAtLeastXTimes[i];
+					BitBoard& nodesWithPrevCandidateCount = nodesBeingHitAtLeastXTimes[i-1];
 
 					const BitBoard newNodesWithCount_i = nodesWithPrevCandidateCount & nodesWithCandidateX;
-					if (newNodesWithCount_i.notEmpty())
-					{
-						nodesWithCandidateCount_i |= newNodesWithCount_i;
-					}
-					
+					nodesWithCandidateCount_i |= newNodesWithCount_i;
 				}
 
-				// mark all new as being hit at least once
-				prevHits[0] |= nodesWithCandidateX;
+				// make sure all nodes that have a candidate are marked as having at least one candidate
+				nodesBeingHitAtLeastXTimes[0] |= nodesWithCandidateX;
 			}
 
 			// at this point we know exactly how many times each node has been "hit"
 			// now we just need to find everyone that has been hit in the range min, max
-			// this is most easily done by aggregating results in range [min, max)
+			// this is most easily done by aggregating results in range [min, max] and then remove the ones found in "max+1"
 			BitBoard potentials;
 			for (uint i = min; i <= max; ++i)
 			{
-				potentials |= getNodesKnownToHaveAtLeastCandidateCount(i);
+				potentials |= nodesBeingHitAtLeastXTimes[i-1];
 			}
 
-			// then remove the ones found in "max+1"
-			potentials &= getNodesKnownToHaveAtLeastCandidateCount(max + 1).invert();
+			// clear out anyone being hit more than "max times" [the array is 0-based so idx=0 are the ones that have been hit 1 time]
+			potentials &= nodesBeingHitAtLeastXTimes[max].invert();
 
 			return potentials;
 		}
