@@ -5,11 +5,12 @@
 #include <functional>
 #include <intrin.h>
 #include <map>
+#include <assert.h>
 
 #include <Core/Types.h>
-#include <SudokuLib/Module.h>
+#include <SudokuLib/sudokulib_module.h>
 
-namespace dd
+namespace ddahlkvist
 {
 	enum class Techniques;
 	struct Result;
@@ -394,6 +395,16 @@ namespace dd
 		Span<BitBoard> getBlocks() { return Span<BitBoard>(&AllDimensions[18], 9); }
 	};
 
+	struct SolveLedger
+	{
+		static constexpr u32 MaxEntries = 1000;
+		
+		u32 numIterations = 0;
+
+		Techniques techniqueUsedInIteration[MaxEntries] = {};
+		u8 numNodesChangedInIteration[MaxEntries] = {};
+	};
+
 	struct Result
 	{
 		void storePreModification(const Node* nodes, const BitBoard& affectedNodes)
@@ -436,6 +447,7 @@ namespace dd
 		}
 
 		Techniques Technique{ };
+		SolveLedger ledger;
 	private:
 		std::vector<Change> Changes;
 		BitBoard _dirty;

@@ -1,8 +1,8 @@
-#include <Core/Module.h>
+#include <Core/core_module.h>
 
-namespace dd
+namespace ddahlkvist::core_module
 {
 	//////////////// CHEAT BIND /////////////
-	void Bind_Core_Module() {}
+	void bind(void* data) {}
 	//////////////// CHEAT BIND /////////////
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace dd
+namespace ddahlkvist
 {
 
 #define MSVC_COMPILER 1
@@ -14,26 +14,24 @@ namespace dd
 #endif
 
 #if defined(BUILD_COMPILE_DLL)
-#if defined(BUILD_EXPORT_TEMPLATE_MODULE)
-#define TEMPLATE_PUBLIC EXPORT_DLL
+#if defined(BUILD_EXPORT_SUDOKULIB_MODULE)
+#define SUDOKULIB_PUBLIC EXPORT_DLL
 #else
-#define TEMPLATE_PUBLIC IMPORT_DLL
+#define SUDOKULIB_PUBLIC IMPORT_DLL
 #endif
 #else
-#define TEMPLATE_PUBLIC
-#endif
-
-//#define TEMPLATE_INTERNAL TEMPLATE_PUBLIC
-#if defined(BUILD_INTERNAL_ACCESS_TEMPLATE_MODULE) || defined(BUILD_EXPORT_TEMPLATE_MODULE)
-#define TEMPLATE_INTERNAL TEMPLATE_PUBLIC
-#else
-#define TEMPLATE_INTERNAL
+#define SUDOKULIB_PUBLIC
 #endif
 
-namespace sudokulib
-{
-void bind(void* data);
-unsigned int getProjectId();
+#if defined(BUILD_INTERNAL_ACCESS_SUDOKULIB_MODULE) || defined(BUILD_EXPORT_SUDOKULIB_MODULE)
+#define SUDOKULIB_INTERNAL SUDOKULIB_PUBLIC
+#else
+#define SUDOKULIB_INTERNAL
+#endif
+
 }
 
+namespace ddahlkvist::sudokulib_module
+{
+	SUDOKULIB_PUBLIC void bind(void* data);
 }

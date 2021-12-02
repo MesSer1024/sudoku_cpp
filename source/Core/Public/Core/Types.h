@@ -1,6 +1,8 @@
 #pragma once
 
-namespace dd
+#include <functional>
+
+namespace ddahlkvist
 {
 	using u8 = unsigned char;
 	using u16 = unsigned short;

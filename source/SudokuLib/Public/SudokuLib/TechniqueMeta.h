@@ -5,7 +5,7 @@
 #include <SudokuLib/SudokuTypes.h>
 #include <SudokuLib/SudokuAlgorithm.h>
 
-namespace dd
+namespace ddahlkvist
 {
 	struct SudokuContext;
 
@@ -27,25 +27,5 @@ namespace dd
 		SingleChain,
 		UniqueRectangle,
 	};
-
-using TechniqueName = std::pair<Techniques, const char*>;
-std::map<Techniques, const char*> TechniqueNameLookup = {
-	TechniqueName(Techniques::None, "NA"),
-	TechniqueName(Techniques::NaiveCandidates, "Naive"),
-	TechniqueName(Techniques::NakedSingle, "Naked Single"),
-	TechniqueName(Techniques::HiddenSingle, "Hidden Single"),
-	TechniqueName(Techniques::NakedPair, "Naked Pair"),
-	TechniqueName(Techniques::NakedTriplet, "Naked Triplet"),
-	TechniqueName(Techniques::HiddenPair, "Hidden Pair"),
-	TechniqueName(Techniques::HiddenTriplet, "Hidden Triplet"),
-	TechniqueName(Techniques::NakedQuad, "Naked Quad"),
-	TechniqueName(Techniques::NakedQuad, "Hidden Quad"),
-	TechniqueName(Techniques::PointingPair, "PointingPair"),
-	TechniqueName(Techniques::BoxLineReduction, "BoxLineReduction"),
-	TechniqueName(Techniques::X_Wing, "X-Wing"),
-	TechniqueName(Techniques::Y_Wing, "Y-Wing"),
-	TechniqueName(Techniques::SingleChain, "Single Chain"),
-	TechniqueName(Techniques::UniqueRectangle, "Unique Rectangle"),
-};
 
 }

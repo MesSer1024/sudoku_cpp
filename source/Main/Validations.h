@@ -7,8 +7,9 @@
 #include <Core/Types.h>
 #include <SudokuLib/SudokuTypes.h>
 #include <SudokuLib/SudokuAlgorithm.h>
+#include <SudokuLib/BoardUtils.h>
 
-namespace dd
+namespace ddahlkvist
 {
 	void validateCandidates() {
 		Node node;
@@ -31,7 +32,7 @@ namespace dd
 	}
 
 	void validateBuildBoardFromLayout() {
-		BoardCollection boards = dd::GetRawBoards();
+		BoardCollection boards = ddahlkvist::GetRawBoards();
 		u32 value = static_cast<u32>(boards.size());
 		assert(value > 0 && value < 7777777);
 
@@ -235,7 +236,7 @@ namespace dd
 }
 
 
-namespace dd
+namespace ddahlkvist
 {
 	void validateRemoveNaiveCandidates()
 	{

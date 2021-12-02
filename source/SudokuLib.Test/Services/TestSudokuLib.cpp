@@ -2,7 +2,7 @@
 
 #include <Core/Types.h>
 
-namespace dd
+namespace ddahlkvist
 {
 
 class SudokuLibFixture : public testing::Test {

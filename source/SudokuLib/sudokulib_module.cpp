@@ -1,21 +1,8 @@
 #include <SudokuLib/sudokulib_module.h>
 
-namespace dd
+namespace ddahlkvist::suduokulib_module
 {
 
-namespace sudokulib
-{
-
-void bind(void* data)
-{
-
-}
-
-unsigned int getProjectId()
-{
-	return 42;
-}
-
-}
+	void bind(void* data) { } // fake binding
 
 }

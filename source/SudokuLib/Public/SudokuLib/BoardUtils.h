@@ -3,10 +3,10 @@
 #include <vector>
 
 #include <SudokuLib/BoardUtils.h>
-#include <SudokuLib/Module.h>
+#include <SudokuLib/sudokulib_module.h>
 #include <SudokuLib/SudokuTypes.h>
 
-namespace dd
+namespace ddahlkvist
 {
 	namespace BoardUtils {
 		constexpr uint RowForNodeId(uint nodeId) { return nodeId / 9; }
@@ -41,15 +41,15 @@ namespace dd
 		}
 	}
 
-	u8 countBits(u32 data) {
+	inline u8 countBits(u32 data) {
 		return static_cast<u8>(__popcnt(data));
 	}
 
-	u8 countCandidates(u16 with2nodes) {
+	inline u8 countCandidates(u16 with2nodes) {
 		return static_cast<u8>(__popcnt16(with2nodes));
 	}
 
-	u16 candidateIdToMask(u8 candidateId) {
+	inline u16 candidateIdToMask(u8 candidateId) {
 		u16 candidateMask = 1 << (candidateId + 1);
 		return candidateMask;
 	}
@@ -134,7 +134,7 @@ namespace dd
 			return b;
 		}
 
-		SudokuBitBoard NeighboursIntersection(u8* nodes, u8 numNodes) {
+		inline SudokuBitBoard NeighboursIntersection(u8* nodes, u8 numNodes) {
 			BitBoard combined(BitBoard::All{});
 
 			for (uint i = 0; i < numNodes; ++i) {
@@ -144,7 +144,7 @@ namespace dd
 			return combined;
 		}
 
-		SudokuBitBoard NeighboursUnion_ifAllNodesAreSameDimension(const u8* nodes, u8 count) {
+		inline SudokuBitBoard NeighboursUnion_ifAllNodesAreSameDimension(const u8* nodes, u8 count) {
 			BitBoard sharedNeighbours;
 
 			u32 rows[9];
@@ -197,7 +197,7 @@ namespace dd
 
 		//////////////////////////////////////////////////////
 
-		SudokuBitBoard bitsSolved(const Board& b)
+		inline SudokuBitBoard bitsSolved(const Board& b)
 		{
 			SudokuBitBoard bits;
 			for (uint i = 0; i < BoardSize; ++i)
@@ -206,7 +206,7 @@ namespace dd
 			return bits;
 		}
 
-		SudokuBitBoard bitsUnsolved(const Board& b)
+		inline SudokuBitBoard bitsUnsolved(const Board& b)
 		{
 			SudokuBitBoard bits;
 			for (uint i = 0; i < BoardSize; ++i)
@@ -214,7 +214,7 @@ namespace dd
 			return bits;
 		}
 
-		BitBoards9 buildCandidateBoards(Board& b) {
+		inline BitBoards9 buildCandidateBoards(Board& b) {
 			BitBoards9 out;
 
 			for (uint i = 0; i < BoardSize; ++i) {
@@ -231,9 +231,9 @@ namespace dd
 			return out;
 		}
 
-		u8 rowToDimension(u32 i) { return static_cast<u8>(i); }
-		u8 colToDimension(u32 i) { return static_cast<u8>(i + 9u); }
-		u8 blockToDimension(u32 i) { return static_cast<u8>(i + 18u); }
+		inline u8 rowToDimension(u32 i) { return static_cast<u8>(i); }
+		inline u8 colToDimension(u32 i) { return static_cast<u8>(i + 9u); }
+		inline u8 blockToDimension(u32 i) { return static_cast<u8>(i + 18u); }
 
 		struct CandidatesInDimensionBoard {
 			BitBoard board;
@@ -245,7 +245,7 @@ namespace dd
 
 		using CandidateBoards9 = std::array<CandidatesInDimensionBoard, 9>; // for instance all different rows
 
-		CandidateBoards9 buildAllRowsForCandidate(SudokuContext& p, u8 candidateId) {
+		inline CandidateBoards9 buildAllRowsForCandidate(SudokuContext& p, u8 candidateId) {
 			CandidateBoards9 out;
 			for (u8 i = 0; i < 9; ++i) {
 				CandidatesInDimensionBoard& ref = out[i];
@@ -258,7 +258,7 @@ namespace dd
 			return out;
 		}
 
-		CandidateBoards9 buildAllColumnsForCandidate(SudokuContext& p, u8 candidateId) {
+		inline CandidateBoards9 buildAllColumnsForCandidate(SudokuContext& p, u8 candidateId) {
 			CandidateBoards9 out;
 			for (u8 i = 0; i < 9; ++i) {
 				CandidatesInDimensionBoard& ref = out[i];
@@ -271,7 +271,7 @@ namespace dd
 			return out;
 		}
 
-		bool sharesBlock(u8& outBlockId, const BitBoard& nodes) {
+		inline bool sharesBlock(u8& outBlockId, const BitBoard& nodes) {
 			for (uint i = 0; i < 9; ++i) {
 				const BitBoard inDimension = BitBlock(i) & nodes;
 				if (inDimension == nodes) {
@@ -282,7 +282,7 @@ namespace dd
 			return false;
 		}
 
-		bool sharesColumn(u8& outColumnId, const BitBoard& nodes) {
+		inline bool sharesColumn(u8& outColumnId, const BitBoard& nodes) {
 			for (uint i = 0; i < 9; ++i) {
 				const BitBoard inDimension = BitColumn(i) & nodes;
 				if (inDimension == nodes) {
@@ -293,7 +293,7 @@ namespace dd
 			return false;
 		}
 
-		bool sharesRow(u8& outRowId, const BitBoard& nodes) {
+		inline bool sharesRow(u8& outRowId, const BitBoard& nodes) {
 			for (uint i = 0; i < 9; ++i) {
 				const BitBoard inDimension = BitRow(i) & nodes;
 				if (inDimension == nodes) {
@@ -313,7 +313,7 @@ namespace dd
 		};
 
 		// If a candidate appears EXACTLY twice in a unit, then those two candidates are called a conjugate pair.
-		std::vector<ConjugatePair> findConjugatePairsForCandidate(const SudokuContext& p, u8 candidateId) {
+		inline std::vector<ConjugatePair> findConjugatePairsForCandidate(const SudokuContext& p, u8 candidateId) {
 			std::vector<ConjugatePair> pairs;
 
 			const BitBoard& candidates = p.AllCandidates[candidateId];
@@ -349,7 +349,7 @@ namespace dd
 		//	return hitTwice & (invalidated.invert());
 		//}
 
-		BitBoard nodesWithExactlyTwoCandidates(const BoardBits::BitBoards9& candidateBoards) {
+		inline BitBoard nodesWithExactlyTwoCandidates(const BoardBits::BitBoards9& candidateBoards) {
 			// Algorithm description: we iterate over each "candidate board"
 			// each candidate board has a bit set if a node consider this candidate to be a possibility
 			// if we store what node was previously hit we can then deduct if a Node has been hit twice
@@ -371,7 +371,7 @@ namespace dd
 			return hitTwice & (invalidated.invert());
 		}
 		 
-		BitBoard nodesWithCandidateCountBetweenXY(const BoardBits::BitBoards9& candidateBoards, int min, int max) {
+		inline BitBoard nodesWithCandidateCountBetweenXY(const BoardBits::BitBoards9& candidateBoards, int min, int max) {
 			assert(min != 0);
 			assert(max < 9);
 			// Algorithm description: We iterate over each candidate board [each bit indicates THAT NODE consider candidateX a possibility]
@@ -418,7 +418,7 @@ namespace dd
 	/////////////////////////////////////////////////////////////////////////////////
 
 	namespace BoardUtils {
-		u16 mergeCandidateMasks(const SudokuContext& p, u8* nodeIds, u8 count) {
+		inline u16 mergeCandidateMasks(const SudokuContext& p, u8* nodeIds, u8 count) {
 			u16 with2nodes = 0;
 			for (uint i = 0; i < count; ++i) {
 				with2nodes |= p.b.Nodes[nodeIds[i]].getCandidates();
@@ -426,7 +426,7 @@ namespace dd
 			return with2nodes;
 		}
 
-		BitBoard mergeCandidateBoards(const SudokuContext& p, u16 combinedMask) {
+		inline BitBoard mergeCandidateBoards(const SudokuContext& p, u16 combinedMask) {
 			BitBoard merged;
 			for (uint i = 0; i < 9; ++i) {
 				u16 c = 1 << (i + 1);
@@ -438,13 +438,13 @@ namespace dd
 			return merged;
 		}
 
-		void removeCandidates(SudokuContext& p, u16 candidatesToRemove, const BitBoard& affectedNodes) {
+		inline void removeCandidates(SudokuContext& p, u16 candidatesToRemove, const BitBoard& affectedNodes) {
 			affectedNodes.foreachSetBit([&p, candidatesToRemove](u32 bitIndex) {
 				p.b.Nodes[bitIndex].candidatesRemoveBySolvedMask(candidatesToRemove);
 			});
 		}
 
-		u16 buildValueMaskFromSolvedNodes(const Node* nodes, const BitBoard& affectedNodes)
+		inline u16 buildValueMaskFromSolvedNodes(const Node* nodes, const BitBoard& affectedNodes)
 		{
 			u32 valueMask = 0U;
 
@@ -455,7 +455,7 @@ namespace dd
 			return static_cast<u16>(valueMask);
 		}
 
-		void removeCandidatesForNodes(Node* nodes, const BitBoard& affectedNodes, u32 savedCandidates) {
+		inline void removeCandidatesForNodes(Node* nodes, const BitBoard& affectedNodes, u32 savedCandidates) {
 			affectedNodes.foreachSetBit([savedCandidates, nodes](u32 bitIndex) {
 				nodes[bitIndex].candidatesToKeep(static_cast<u16>(savedCandidates));
 			});
@@ -474,21 +474,21 @@ namespace dd
 		//	return potentials;
 		//}
 
-		void countTimesEachCandidateOccur(u8* candidateCount, const SudokuContext& p, const BitBoard& affectedNodes) {
+		inline void countTimesEachCandidateOccur(u8* candidateCount, const SudokuContext& p, const BitBoard& affectedNodes) {
 			for (uint i = 0; i < 9; ++i) {
 				candidateCount[i] = (affectedNodes & p.AllCandidates[i]).countSetBits();
 			}
 		}
 	}
 
-	u16 buildSolvedMask(const SudokuContext& p, u8* nodeIds, u8 count) {
+	inline u16 buildSolvedMask(const SudokuContext& p, u8* nodeIds, u8 count) {
 		u16 merged = 0;
 		for (uint i = 0; i < count; ++i)
 			merged |= 1 << p.b.Nodes[nodeIds[i]].getValue();
 		return merged;
 	}
 
-	u16 buildSolvedMask(const SudokuContext& p, const BitBoard& affectedNodes) {
+	inline u16 buildSolvedMask(const SudokuContext& p, const BitBoard& affectedNodes) {
 		u16 merged = 0;
 		affectedNodes.foreachSetBit([&p, &merged](u32 bit) {
 			merged |= 1 << p.b.Nodes[bit].getValue();
@@ -496,19 +496,19 @@ namespace dd
 		return merged;
 	}
 
-	u16 buildValueMaskFromCandidateIds(const u16* ids, u32 count) {
+	inline u16 buildValueMaskFromCandidateIds(const u16* ids, u32 count) {
 		u16 with2nodes = 0;
 		for (uint i = 0; i < count; ++i)
 			with2nodes |= 1u << (ids[i] + 1); // ids are zero based
 		return with2nodes;
 	}
 
-	u16 toCandidateMask(u32 valueMask)
+	inline u16 toCandidateMask(u32 valueMask)
 	{
 		return (~valueMask) & Candidates::All;
 	}
 
-	u16 getOnlyCandidateFromMask(u16 candidates) {
+	inline u16 getOnlyCandidateFromMask(u16 candidates) {
 		switch (candidates) {
 		case Candidates::c1:
 			return 1;

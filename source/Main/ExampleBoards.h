@@ -4,7 +4,7 @@
 #include <string>
 #include <SudokuLib/SudokuTypes.h>
 
-namespace dd
+namespace ddahlkvist
 {
 	using SudokuBoardRaw = std::string;
 	using BoardCollection = std::vector<SudokuBoardRaw>;

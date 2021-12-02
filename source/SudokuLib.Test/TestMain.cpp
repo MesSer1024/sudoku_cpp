@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-namespace dd
+namespace ddahlkvist
 {
 
 class TestRunner
@@ -21,6 +21,6 @@ public:
 
 int main(int argc, char** argv)
 {
-	dd::TestRunner testRunner;
+	ddahlkvist::TestRunner testRunner;
 	return testRunner.run(argc, argv);
 }

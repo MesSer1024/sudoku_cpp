@@ -9,7 +9,7 @@
 #include <SudokuLib/SudokuAlgorithm.h>
 #include <SudokuLib/SudokuPrinter.h>
 
-namespace dd
+namespace ddahlkvist
 {
 
 
@@ -46,18 +46,21 @@ namespace dd
 			techniques::fillUnsolvedWithNonNaiveCandidates(context);
 		}
 
-		g_numIterations = 0;
+		SolveLedger& ledger = result.ledger;
+
+		u32 iteration = 0;
+
 		bool iterateAgain = true;
-		while (iterateAgain && g_numIterations < MaxIterations) {
+		while (iterateAgain && iteration < ledger.MaxEntries) {
 #ifdef DD_DEBUG
 			b.updateDebugPretty();
 #endif
 			result.reset();
 			if (runTechniques(b, result)) {
-				g_nodesChangedInIteration[g_numIterations] = static_cast<u8>(result.size());
-				g_techniqueUsedInIteration[g_numIterations] = result.Technique;
+				ledger.numNodesChangedInIteration[iteration] = static_cast<u8>(result.size());
+				ledger.techniqueUsedInIteration[iteration] = result.Technique;
 			}
-			g_numIterations++;
+			iteration++;
 			iterateAgain = result.size() != 0;
 		}
 
@@ -73,7 +76,7 @@ namespace dd
 
 void runValidations()
 {
-	using namespace dd;
+	using namespace ddahlkvist;
 
 	validateCandidates();
 	validateBuildBoardFromLayout();
@@ -99,12 +102,12 @@ int main()
 		runValidations();
 
 	using namespace std;
-	using namespace dd;
+	using namespace ddahlkvist;
 
 	Board boards[1000];
 	const u32 numBoards = FillBoards(boards, GetRawBoards());
 
-	// working one specfic board
+	// work on one specfic board
 	//{
 	//	const int boardIdx = 21;
 	//	Board& board = boards[boardIdx];
@@ -139,7 +142,7 @@ int main()
 		if (PrintVerbose)
 		{
 			printSudokuBoard(board);
-			printCandidateOutput(Techniques::NakedPair);
+			printCandidateOutput(Techniques::NakedPair, outcome.ledger);
 		
 			if (solved)
 				validateSolvedCorectly(board);
