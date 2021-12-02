@@ -33,7 +33,6 @@ namespace ddahlkvist
 
 	constexpr u16 AllCandidatesArray[9] = { Candidates::c1, Candidates::c2, Candidates::c3, Candidates::c4, Candidates::c5, Candidates::c6, Candidates::c7, Candidates::c8, Candidates::c9 };
 
-
 	struct Node
 	{
 		using ValueType = u16;

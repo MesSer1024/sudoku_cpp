@@ -4,6 +4,7 @@
 
 #include <SudokuLib/sudokulib_module.h>
 #include <SudokuLib/SudokuTypes.h>
+#include <InternalSudokuTypes.h>
 
 namespace ddahlkvist
 {
