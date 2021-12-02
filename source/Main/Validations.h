@@ -47,8 +47,8 @@ namespace dd
 
 		for (uint i = 0; i < BoardSize; ++i) {
 			if (ExampleBoardRaw[i] != '.') {
-				u16 value = ExampleBoardRaw[i] - '0';
-				assert(my.Nodes[i] == value);
+				u16 innerValue = ExampleBoardRaw[i] - '0';
+				assert(my.Nodes[i] == innerValue);
 			}
 		}
 	}

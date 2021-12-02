@@ -403,7 +403,7 @@ namespace dd
 			// now we just need to find everyone that has been hit in the range min, max
 			// this is most easily done by aggregating results in range [min, max] and then remove the ones found in "max+1"
 			BitBoard potentials;
-			for (uint i = min; i <= max; ++i)
+			for (int i = min; i <= max; ++i)
 			{
 				potentials |= nodesBeingHitAtLeastXTimes[i-1];
 			}

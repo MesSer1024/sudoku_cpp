@@ -84,6 +84,8 @@ namespace dd
 		ValueType getValue() const { return bits.value; }
 
 	private:
+		#pragma warning(push)
+		#pragma warning(disable: 4201)
 		union Value
 		{
 			struct
@@ -96,6 +98,8 @@ namespace dd
 		};
 
 		Value bits;
+		
+		#pragma warning(pop)
 	};
 
 	struct Board
@@ -108,7 +112,7 @@ namespace dd
 		void updateDebugPretty() {
 			auto nodeToChar = [](Node& n) -> char {
 				if (n.isSolved()) {
-					return '0' + n.getValue();
+					return '0' + static_cast<char>(n.getValue());
 				}
 				else {
 					return '.';

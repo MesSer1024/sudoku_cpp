@@ -91,8 +91,8 @@ namespace dd
 				u32 numCandidates = n.fillCandidateIds(candidates);
 
 				printf("\nidx=%u candidates:%u = {", i, numCandidates);
-				for (uint i = 0; i < numCandidates; ++i)
-					printf("%s%u", (i>0 ? ",":""), candidates[i]);
+				for (uint j = 0; j < numCandidates; ++j)
+					printf("%s%u", (j>0 ? ",":""), candidates[j]);
 				printf("}");
 			}
 			i++;

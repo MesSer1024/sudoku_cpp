@@ -149,13 +149,13 @@ int main()
 			cout << "BoardIndex: " << i << "\t\t" << (solved ? "solved" : "unsolved") << endl;
 		}
 
-		if (StopOnFirstUnsolved && !solved)
+		if constexpr (StopOnFirstUnsolved && !solved)
 			break;
 	}
 
 	cout << "-------------------" << endl;
 	cout << "DONE!!" << endl;
-	printf("DONE: Solved=%u, iterated=%u\n", solvedCount, i);
-	cin.get();
+	printf("Execution Finished: Solved=%u/%u\n", solvedCount, i);
+
 	return 0;
 }

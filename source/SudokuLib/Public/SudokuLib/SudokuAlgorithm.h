@@ -15,7 +15,7 @@
 #include <SudokuLib/BoardUtils.h>
 #include <SudokuLib/Module.h>
 #include <SudokuLib/SudokuTypes.h>
-#include <SudokuLib/Meta.h>
+#include <SudokuLib/Combinations.h>
 #include <SudokuLib/TechniqueMeta.h>
 #include <SudokuLib/SudokuPrinter.h>
 
@@ -819,26 +819,26 @@ namespace dd
 					const u8 numC1 = neighboursWithC1.fillSetBits(c1Nodes);
 					const u8 numC2 = neighboursWithC2.fillSetBits(c2Nodes);
 
-					u8 nodes[3];
+					u8 innerNodes[3];
 					if (numC1 > 0 && numC2 > 0) {
-						for (u8 i = 0; i < numC1; ++i) {
-							for (u8 j = 0; j < numC2; ++j) {
-								nodes[0] = bit;
-								nodes[1] = c1Nodes[i];
-								nodes[2] = c2Nodes[j];
-								assert(nodes[0] != nodes[1]);
-								assert(nodes[0] != nodes[2]);
-								assert(nodes[1] != nodes[2]);
+						for (u8 a = 0; a < numC1; ++a) {
+							for (u8 b = 0; b < numC2; ++b) {
+								innerNodes[0] = bit;
+								innerNodes[1] = c1Nodes[a];
+								innerNodes[2] = c2Nodes[b];
+								assert(innerNodes[0] != innerNodes[1]);
+								assert(innerNodes[0] != innerNodes[2]);
+								assert(innerNodes[1] != innerNodes[2]);
 
-								const u16 candidateMask = BoardUtils::mergeCandidateMasks(p, nodes, 3);
-								const u8 numCandidates = countCandidates(candidateMask);
-								if (numCandidates == 3) {
+								const u16 candidateMask = BoardUtils::mergeCandidateMasks(p, innerNodes, 3);
+								const u8 numInnerCandidates = countCandidates(candidateMask);
+								if (numInnerCandidates == 3) {
 									const u16 removed = candidateIdToMask(candidates[0]) | candidateIdToMask(candidates[1]);
 									const u16 oneCandidate = candidateMask ^ removed;
 									assert(countCandidates(oneCandidate) == 1);
 									const u8 searchedCandidateId = static_cast<u8>(getOnlyCandidateFromMask(oneCandidate) - 1);
 
-									const BitBoard allSeenNodes = BoardBits::NeighboursIntersection(&nodes[1], 2); // take the 2 other nodes (except the one I was iterating over
+									const BitBoard allSeenNodes = BoardBits::NeighboursIntersection(&innerNodes[1], 2); // take the 2 other nodes (except the one I was iterating over
 									const BitBoard seenWithCandidateAndPotential = allSeenNodes & p.AllCandidates[searchedCandidateId];
 									if (seenWithCandidateAndPotential.notEmpty()) {
 										YWingCombination& ywing = ywings[numYwings++];
@@ -977,7 +977,7 @@ namespace dd
 
 							overlapping.foreachSetBit([&p, candidateId](u32 bit) {
 								p.b.Nodes[bit].candidatesRemoveSingle(candidateId + 1);
-							});
+								});
 
 							return true; // dunno if this assumption is correct
 						}
@@ -985,15 +985,15 @@ namespace dd
 						// rule 2: if two nodes in the same dimension have the same color, that version of "color" is invalid
 						for (auto&& dim : p.AllDimensions) {
 							const BitBoard inDimensions[2] = { dim & whiteMark, dim & blackMark };
-							for (uint i = 0; i < 2; ++i) {
-								const BitBoard& inDimension = inDimensions[i];
+							for (uint a = 0; a < 2; ++a) {
+								const BitBoard& inDimension = inDimensions[a];
 								if (inDimension.countSetBits() > 1) {
 									// all candidates of same colour can be removed (that version is invalid)
 									p.result.storePreModification(p.b.Nodes, inDimension);
 
 									inDimension.foreachSetBit([&p, candidateId](u32 bit) {
 										p.b.Nodes[bit].candidatesRemoveSingle(candidateId + 1);
-									});
+										});
 
 									return true; // #error - should we really return here?
 
@@ -1014,22 +1014,19 @@ namespace dd
 										affectedNodes.setBit(bit);
 									}
 								}
-							});
+								});
 
 							if (affectedNodes.notEmpty()) {
 								p.result.storePreModification(p.b.Nodes, affectedNodes);
 
 								affectedNodes.foreachSetBit([&p, candidateId](u32 bit) {
 									p.b.Nodes[bit].candidatesRemoveSingle(candidateId + 1);
-								});
+									});
 
 								return true; // #error - should we really return here?
 							}
 						} // rule 4|5
-
-						int apa = 0;
 					}
-					int foo = 123;
 				}
 			}
 			return p.result.size() > 0;
