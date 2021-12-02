@@ -241,15 +241,16 @@ namespace ddahlkvist
 		}
 
 		{
+
 			const u16 c1Mask = Candidates::c1;
 			const u16 ModifiedNode = 33;
 			EXPECT_TRUE(!b.Nodes[ModifiedNode].isSolved());
 			b.Nodes[ModifiedNode].candidatesSet(c1Mask);
 
-			BoardBits::BitBoards9 candidates;
-			BoardBits::buildCandidateBoards(candidates, b);
+			Result ignored;
+			SudokuContext ctx = buildContext(b, ignored);
 
-			const BitBoard bitsWithC1 = candidates[0];
+			const BitBoard bitsWithC1 = ctx.AllCandidates[0];
 
 			EXPECT_TRUE(bitsWithC1.countSetBits() == 1);
 			EXPECT_TRUE(bitsWithC1.test(ModifiedNode));

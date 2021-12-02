@@ -9,9 +9,9 @@ namespace ddahlkvist
 		SudokuContext ctx{ b, r };
 
 		BoardBits::fillBitsSolved(ctx.SolvedValues, ctx.Solved, b);
-		BoardBits::buildCandidateBoards(ctx.AllCandidates, b);
-		BoardBits::AllDimensions(ctx.AllDimensions);
 		ctx.Unsolved = ctx.Solved.invert();
+		BoardBits::buildCandidateBoards(ctx.AllCandidates, ctx.Unsolved, b);
+		BoardBits::AllDimensions(ctx.AllDimensions);
 
 		return ctx;
 	}

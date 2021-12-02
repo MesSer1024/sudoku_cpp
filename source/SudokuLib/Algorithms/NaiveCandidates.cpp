@@ -36,6 +36,8 @@ namespace ddahlkvist::techniques
 
 	bool removeNaiveCandidates(SudokuContext& p)
 	{
+		p.result.Technique = Techniques::NaiveCandidates;
+
 		// This algorithm will remove candidates from nodes because the value has been solved inside row/col/block [dimension]
 		// Meaning: if we have solved the value 4 inside block, then we remove 4 as a candidate from all other nodes inside that block
 
@@ -44,55 +46,26 @@ namespace ddahlkvist::techniques
 		// it feels like we could utilize BitBoard for "solved" nodes and then compare that to "dimension + candidates"
 		// baseline for performance: 5ms, 3ms spent inside removeNaiveCandidates
 
-		//BitBoard solved_1; // assume that we have a bitboard containing nodes that are known to hold the [value 1]
+		// ~[32-40]ms usually ~35ms
+		for (u16 value = 0; value < 9; ++value)
+		{
+			const BitBoard& nodesWhereValueIsKnown = p.SolvedValues[value];
+			if (!nodesWhereValueIsKnown.notEmpty())
+				continue;
 
-
-
-
-
-		p.result.Technique = Techniques::NaiveCandidates;
-
-		//for (auto&& dimension : p.AllDimensions) {
-		//	u8 unsolvedNodes[9];
-		//	const BitBoard unsolved = p.Unsolved & dimension;
-		//	const u8 numUnsolved = unsolved.fillSetBits(unsolvedNodes);
-		//	const u16 mergedMask = BoardUtils::mergeCandidateMasks(p, unsolvedNodes, numUnsolved);
-		//	if (countCandidates(mergedMask) == numUnsolved)
-		//		continue; // what does this early out do?
-
-		//	const BitBoard solvedDimension = p.Solved & dimension;
-		//	const u16 solvedValues = buildSolvedMask(p, solvedDimension); // all solved values in dimension
-		//	for (uint i = 0; i < numUnsolved; ++i) {
-		//		const u8 nodeId = unsolvedNodes[i];
-		//		Node& node = p.b.Nodes[nodeId];
-		//		const bool haveCandidateToRemove = solvedValues & node.getCandidates(); // compare the mask of "solved" with "mask of candidates" foreach node
-		//		if (haveCandidateToRemove) {
-		//			p.result.append(node, static_cast<u8>(nodeId));
-		//			node.candidatesRemoveBySolvedMask(solvedValues);
-		//		}
-
-		//	}
-		//}
-
-		for (auto&& dimension : p.AllDimensions) {
-			u8 unsolvedNodes[9];
-			const BitBoard unsolved = p.Unsolved & dimension;
-			const u8 numUnsolved = unsolved.fillSetBits(unsolvedNodes);
-			const u16 mergedMask = BoardUtils::mergeCandidateMasks(p, unsolvedNodes, numUnsolved);
-			if (countCandidates(mergedMask) == numUnsolved)
-				continue; // what does this early out do?
-
-			const BitBoard solvedDimension = p.Solved & dimension;
-			const u16 solvedValues = buildSolvedMask(p, solvedDimension); // all solved values in dimension
-			for (uint i = 0; i < numUnsolved; ++i) {
-				const u8 nodeId = unsolvedNodes[i];
-				Node& node = p.b.Nodes[nodeId];
-				const bool haveCandidateToRemove = solvedValues & node.getCandidates(); // compare the mask of "solved" with "mask of candidates" foreach node
-				if (haveCandidateToRemove) {
-					p.result.append(node, static_cast<u8>(nodeId));
-					node.candidatesRemoveBySolvedMask(solvedValues);
+			for (auto&& dimension : p.AllDimensions)
+			{
+				const BitBoard solvedInDimension = nodesWhereValueIsKnown & dimension;
+				if (solvedInDimension.notEmpty())
+				{
+					const BitBoard badCandidates = p.AllCandidates[value] & dimension;
+					badCandidates.foreachSetBit([&](auto idx) {
+						Node& node = p.b.Nodes[idx];
+						p.result.append(node, idx);
+						const u16 candidateId = value + 1;
+						node.candidatesRemoveSingle(candidateId);
+					});
 				}
-
 			}
 		}
 

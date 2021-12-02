@@ -33,8 +33,16 @@ namespace ddahlkvist
 		}
 
 		// let each board be solved 100 times to make sure we have more performance data
+#ifdef DD_FINAL
+		const u32 IterationCount = 100;
+		const u32 LastIteration = IterationCount - 1;
+#else
+		const u32 IterationCount = 1;
+		const u32 LastIteration = IterationCount - 1;
+#endif
+
 		bool isSolved = false;
-		for (uint i = 0; i < 100; ++i)
+		for (uint i = 0; i < IterationCount; ++i)
 		{
 			Board localBoard = b;
 			Result localResult = r;
@@ -63,7 +71,7 @@ namespace ddahlkvist
 					postNumSolved++;
 			}
 
-			if (i == 99)
+			if (i == LastIteration)
 			{
 				isSolved = postNumSolved == BoardSize;
 				b = localBoard;

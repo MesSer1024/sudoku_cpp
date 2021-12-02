@@ -293,7 +293,8 @@ namespace ddahlkvist
 			return static_cast<u8>(dest - bitArr);
 		}
 
-		void foreachSetBit(BitAction action) const {
+		template<typename BitAction>
+		void foreachSetBit(BitAction&& action) const {
 			u8 bitArr[BoardSize + 1]; // need one extra for overwrite protection #todo : write test if this is necessary
 
 			const u8 end = fillSetBits(bitArr);

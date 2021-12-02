@@ -208,9 +208,10 @@ namespace ddahlkvist
 		{
 			for (uint i = 0; i < BoardSize; ++i)
 			{
-				if (b.Nodes[i].isSolved())
+				auto& node = b.Nodes[i];
+				const auto value = node.getValue();
+				if (value > 0)
 				{
-					auto value = b.Nodes[i].getValue();
 					out9[value-1].setBit(i);
 				}
 			}
@@ -219,18 +220,18 @@ namespace ddahlkvist
 				outAllSolved |= board;
 		}
 
-		inline void buildCandidateBoards(BitBoards9& outCandidates, Board& b) {
-
-			for (uint i = 0; i < BoardSize; ++i) {
-				if (!b.Nodes[i].isSolved()) {
-					u16 candidate = b.Nodes[i].getCandidates();
-					for (u16 c = 0; c < 9; ++c) {
-						if (candidate & AllCandidatesArray[c]) {
-							outCandidates[c].setBit(i);
-						}
+		inline void buildCandidateBoards(BitBoards9& outCandidates, const BitBoard& unsolved, Board& b) {
+			auto func = [&](auto idx) {
+				Node& node = b.Nodes[idx];
+				u16 candidate = node.getCandidates();
+				for (u16 c = 0; c < 9; ++c) {
+					if (candidate & AllCandidatesArray[c]) {
+						outCandidates[c].setBit(idx);
 					}
 				}
-			}
+			};
+
+			unsolved.foreachSetBit(func);
 		}
 
 		inline u8 rowToDimension(u32 i) { return static_cast<u8>(i); }
