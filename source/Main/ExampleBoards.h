@@ -6,10 +6,8 @@
 
 namespace ddahlkvist
 {
-	using SudokuBoardRaw = std::string;
-	using BoardCollection = std::vector<SudokuBoardRaw>;
-
-	static const SudokuBoardRaw ExampleBoardRaw = "..5.398...82.1...7.4.75.62..3.49.................23.8..91.82.6.5...6.93...894.1..";
+	using SudokuString = std::string;
+	using BoardCollection = std::vector<SudokuString>;
 
 	static u32 FillBoards(Board* outBoards, BoardCollection&& rawBoards) {
 		uint i = 0;

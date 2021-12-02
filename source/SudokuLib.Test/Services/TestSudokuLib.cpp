@@ -12,10 +12,7 @@
 
 namespace ddahlkvist
 {
-	using SudokuBoardRaw = std::string;
 	class SudokuLibFixture : public testing::Test {
-
-
 	public:
 		static constexpr char const* ExampleBoardRaw = "..5.398...82.1...7.4.75.62..3.49.................23.8..91.82.6.5...6.93...894.1..";
 
