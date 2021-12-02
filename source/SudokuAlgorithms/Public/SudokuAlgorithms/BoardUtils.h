@@ -350,45 +350,79 @@ namespace dd
 		//}
 
 		BitBoard nodesWithExactlyTwoCandidates(const BoardBits::BitBoards9& candidateBoards) {
+			// Algorithm description: we iterate over each "candidate board"
+			// each candidate board has a bit set if a node consider this candidate to be a possibility
+			// if we store what node was previously hit we can then deduct if a Node has been hit twice
+			// if we then track what nodes has been hit "twice", if they happen to be hit an additional time, that means that they are invalidated...
+
 			BitBoard invalidated;
 			BitBoard hitOnce;
 			BitBoard hitTwice;
 
-			for (uint i = 0; i < 9; ++i) {
-				BitBoard overlap = candidateBoards[i] & hitOnce;
+			for (const auto& nodesWithCandidateX : candidateBoards) {
+				BitBoard overlap = nodesWithCandidateX & hitOnce;
 				if (overlap.notEmpty()) {
 					invalidated |= (overlap & hitTwice); //
 					hitTwice |= overlap;
 				}
-				hitOnce |= candidateBoards[i];
+				hitOnce |= nodesWithCandidateX;
 			}
 
 			return hitTwice & (invalidated.invert());
 		}
 		 
 		BitBoard nodesWithCandidateCountBetweenXY(const BoardBits::BitBoards9& candidateBoards, int min, int max) {
+			// Algorithm description: We iterate over each candidate board [each bit indicates THAT NODE consider candidateX a possibility]
+			// That CandidateBoard can then be compared to other results in order to answer
+			// NodesThatHaveBeenHitMinimumTimes_1
+			// NodesThatHaveBeenHitMinimumTimes_2
+			// NodesThatHaveBeenHitMinimumTimes_3
+
 			BitBoard invalidated;
 			BitBoard prevHits[9];
-			BitBoard overlaps[9];
 
-			if (min == 2 && max == 2)
-				return nodesWithExactlyTwoCandidates(candidateBoards);
+			auto getNodesKnownToHaveAtLeastCandidateCount = [&prevHits](u32 candidateCount) -> BitBoard& { return prevHits[candidateCount-1]; };
 
-			for (uint i = 0; i < 9; ++i) {
-				const BitBoard& hitNow = candidateBoards[i];
-				for (int j = max; j > 0; --j) {
-					overlaps[j] = hitNow & prevHits[j];
+			for (auto& nodesWithCandidateX : candidateBoards) {
+				//BitBoard& nodesWithCount1 = getNodesKnownToHaveAtLeastCandidateCount(1);
+				//BitBoard& nodesWithCount2 = getNodesKnownToHaveAtLeastCandidateCount(2);
+				//BitBoard& nodesWithCount3 = getNodesKnownToHaveAtLeastCandidateCount(3);
+				//
+				//const BitBoard newNodesWithCount3 = nodesWithCandidateX & nodesWithCount2;
+				//const BitBoard newNodesWithCount2 = nodesWithCandidateX & nodesWithCount1;
+				//nodesWithCount3 |= newNodesWithCount3;
+				//nodesWithCount2 |= newNodesWithCount2;
+
+				for (uint i = 9; i > 1; --i)
+				{
+					BitBoard& nodesWithCandidateCount_i = getNodesKnownToHaveAtLeastCandidateCount(i);
+					BitBoard& nodesWithPrevCandidateCount = getNodesKnownToHaveAtLeastCandidateCount(i-1);
+
+					const BitBoard newNodesWithCount_i = nodesWithPrevCandidateCount & nodesWithCandidateX;
+					if (newNodesWithCount_i.notEmpty())
+					{
+						nodesWithCandidateCount_i |= newNodesWithCount_i;
+					}
+					
 				}
 
-				overlaps[0] |= hitNow;
-
-				for (int j = max; j > 0; --j) {
-					prevHits[j] |= overlaps[j - 1];
-				}
+				// mark all new as being hit at least once
+				prevHits[0] |= nodesWithCandidateX;
 			}
 
-			invalidated |= overlaps[max];
-			return prevHits[min] & invalidated.invert();
+			// at this point we know exactly how many times each node has been "hit"
+			// now we just need to find everyone that has been hit in the range min, max
+			// this is most easily done by aggregating results in range [min, max)
+			BitBoard potentials;
+			for (uint i = min; i <= max; ++i)
+			{
+				potentials |= getNodesKnownToHaveAtLeastCandidateCount(i);
+			}
+
+			// then remove the ones found in "max+1"
+			potentials &= getNodesKnownToHaveAtLeastCandidateCount(max + 1).invert();
+
+			return potentials;
 		}
 	}
 
