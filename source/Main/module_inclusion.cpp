@@ -1,2 +1,2 @@
 //#include <Core/Module.h>
-//#include <SudokuAlgorithms/Module.h>
+//#include <SudokuLib/Module.h>

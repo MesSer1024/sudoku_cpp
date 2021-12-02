@@ -7,7 +7,7 @@
 #include <map>
 
 #include <Core/Types.h>
-#include <SudokuAlgorithms/Module.h>
+#include <SudokuLib/Module.h>
 
 namespace dd
 {

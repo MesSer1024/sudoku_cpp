@@ -5,8 +5,8 @@
 
 #include <ExampleBoards.h>
 #include <Core/Types.h>
-#include <SudokuAlgorithms/SudokuTypes.h>
-#include <SudokuAlgorithms/SudokuAlgorithm.h>
+#include <SudokuLib/SudokuTypes.h>
+#include <SudokuLib/SudokuAlgorithm.h>
 
 namespace dd
 {

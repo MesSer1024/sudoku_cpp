@@ -1,68 +1,117 @@
 -- premake5.lua
 
-function os.winSdkVersion()
-    local reg_arch = iif( os.is64bit(), "\\Wow6432Node\\", "\\" )
-    local sdk_version = os.getWindowsRegistry( "HKLM:SOFTWARE" .. reg_arch .."Microsoft\\Microsoft SDKs\\Windows\\v10.0\\ProductVersion" )
-    if sdk_version ~= nil then return sdk_version end
-end
-
--- ///////////////////////////////////////
+-- SudokuGuider
+-- COMPILING_STATIC
+-- COMPILING_DLL
 
 workspace "SudokuGuider"
-   filter {"system:windows", "action:vs*"}
-      systemversion(os.winSdkVersion() .. ".0")
+  language "C++"
+  cppdialect "C++20"
+  architecture "x64"   
+  location "_local" -- where to place sln-files etc
+  targetdir "_local/%{cfg.buildcfg}"
+  configurations { "Debug", "Final" }
+  platforms { "Static" , "DLL" }
+  --platforms { "Static" }
+  warnings "Extra"
+  disablewarnings { "4100" } -- unused parameter value (input to function)
 
-   filename "SudokuGuider"
-   language "C++"
-   cppdialect "C++20"
-   configurations { "Debug", "Release" }
-   platforms { "Static", "DLL" }
-   architecture "x64"   
-   location "local"
-   -- defines { "DD_USING" "DD_ON 1", "DD_OFF -3" } -- how to to something like this?
+  -- setup the different build configurations
+  filter { "platforms:Static" }
+    kind "StaticLib"
+    defines { "BUILD_COMPILE_STATIC" }
 
-   filter { "platforms:Static" }
-       kind "StaticLib"
-       defines { "COMPILING_STATIC" }
-
-   filter { "platforms:DLL" }
-       kind "SharedLib"
-       defines { "COMPILING_DLL" }
+  filter { "platforms:DLL" }
+    kind "SharedLib"
+    defines { "BUILD_COMPILE_DLL" }   
 
    filter { "configurations:Debug" }
       defines { "DD_DEBUG", "DEBUG" }
-      runtime "Debug"
-      staticruntime "on"
       symbols "On"
 
-   filter {"configurations:Release"}
-      defines { "DD_RELEASE", "RELEASE" }
-      runtime "Release"      
-      staticruntime "on"
+   filter {"configurations:Final"}
+      defines { "DD_FINAL", "FINAL", "NDEBUG" }
       optimize "On"
       symbols "On"
 
-project "Core"
-   targetdir "local/Core/%{cfg.buildcfg}"
-   includedirs { "source/Core/", "source/Core/Public/" }
+-- Done with global project settings
 
-   files { "source/Core/**.h", "source/Core/**.cpp" }
-   removefiles {}
+-- <UtilityFunctions>
+function DeclareProject(identifier, projectType)
+	project (identifier)
+	if projectType ~= nil then kind (projectType) end
+	
+	files { "source/" .. identifier .. "/**" }
+	includedirs { "source/" .. identifier, "source/" .. identifier .. "/Public"  }
+end
 
-project "SudokuAlgorithms"
-   targetdir "local/SudokuAlgorithms/%{cfg.buildcfg}"
+function DeclareTestProject(identifier)
+	project (identifier)
+	kind "ConsoleApp"
+	
+	files { "source/" .. identifier .. "/**" }
+	includedirs { "source/" .. identifier, "ExternalLibs/googletest/include" }		
+	links { "GoogleTest" }
+end
 
-   links { "Core" }
-   includedirs { "source/SudokuAlgorithms/", "source/SudokuAlgorithms/Public/", "source/Core/Public/" }
+function AddOneDependency(name)
+	links { name }
+	includedirs { "source/" .. name .. "/Public" }
+end
 
-   files { "source/SudokuAlgorithms/**.h", "source/SudokuAlgorithms/**.cpp" }
+function AddDependency(...)
+   local arg = {...}
+   for i,v in ipairs(arg) do
+      AddOneDependency(v)
+   end
+end
 
-project "Main"
-   kind "ConsoleApp"
-   targetdir "local/Main/%{cfg.buildcfg}"
-   -- removeplatforms { "Static", "DLL" }
+function UseOneProjectAsInternal(name)
+	links { name }
+	includedirs { "source/" .. name .. "/Public", "source/" .. name }
+end
 
-   links { "Core", "SudokuAlgorithms" }
-   includedirs { "source/Main/", "source/Main/Public/", "source/SudokuAlgorithms/Public/", "source/Core/Public/" }
+function UseProjectAsInternal(...)
+   local arg = {...}
+   for i,v in ipairs(arg) do
+      UseOneProjectAsInternal(v)
+   end
+end
 
-   files { "source/Main/**.h", "source/Main/**.cpp" }
+-- <ExternalProjects>
+group "_External"
+  project "GoogleTest"
+    kind "StaticLib"
+    files { "ExternalLibs/googletest/src/gtest-all.cc" }
+    includedirs { "ExternalLibs/googletest/include", "ExternalLibs/googletest" }
+
+group ""
+-- </ExternalProjects>
+
+-- <LibraryProjects>
+group "Core"
+	DeclareProject("Core")
+	defines { "BUILD_EXPORT_CORE_MODULE" }
+
+group "SudokuLib"
+	DeclareProject("SudokuLib")
+	AddDependency("Core")
+	defines { "BUILD_EXPORT_SUDOKULIB_MODULE" }
+	
+group "SudokuLib/Tests"
+	DeclareTestProject("SudokuLib.Test")
+	AddDependency("Core")
+	UseProjectAsInternal("SudokuLib")
+	defines { "BUILD_INTERNAL_ACCESS_SUDOKULIB_MODULE" }
+
+group "" -- leave Library-group
+-- </LibraryProjects>
+
+-- <Main>
+group "Main"
+	DeclareProject("Main", "ConsoleApp")
+	targetname "SudokuSolver"
+	AddDependency("SudokuLib", "Core")
+
+group ""
+-- </Main>

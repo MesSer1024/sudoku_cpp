@@ -5,9 +5,9 @@
 #include <ExampleBoards.h>
 #include <Validations.h>
 #include <Core/Types.h>
-#include <SudokuAlgorithms/SudokuTypes.h>
-#include <SudokuAlgorithms/SudokuAlgorithm.h>
-#include <SudokuPrinter.h>
+#include <SudokuLib/SudokuTypes.h>
+#include <SudokuLib/SudokuAlgorithm.h>
+#include <SudokuLib/SudokuPrinter.h>
 
 namespace dd
 {

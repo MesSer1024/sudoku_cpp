@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <Core/Types.h>
-#include <SudokuAlgorithms/SudokuTypes.h>
+#include <SudokuLib/SudokuTypes.h>
 
 namespace dd 
 {

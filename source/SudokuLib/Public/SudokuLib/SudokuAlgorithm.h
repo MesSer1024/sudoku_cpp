@@ -12,12 +12,12 @@
 #include <cstdint>
 #include <cassert>
 
-#include <SudokuAlgorithms/BoardUtils.h>
-#include <SudokuAlgorithms/Module.h>
-#include <SudokuAlgorithms/SudokuTypes.h>
-#include <SudokuAlgorithms/Meta.h>
-#include <SudokuAlgorithms/TechniqueMeta.h>
-#include <SudokuPrinter.h>
+#include <SudokuLib/BoardUtils.h>
+#include <SudokuLib/Module.h>
+#include <SudokuLib/SudokuTypes.h>
+#include <SudokuLib/Meta.h>
+#include <SudokuLib/TechniqueMeta.h>
+#include <SudokuLib/SudokuPrinter.h>
 
 namespace dd
 {

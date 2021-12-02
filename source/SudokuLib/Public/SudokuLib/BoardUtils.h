@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include <SudokuAlgorithms/BoardUtils.h>
-#include <SudokuAlgorithms/Module.h>
-#include <SudokuAlgorithms/SudokuTypes.h>
+#include <SudokuLib/BoardUtils.h>
+#include <SudokuLib/Module.h>
+#include <SudokuLib/SudokuTypes.h>
 
 namespace dd
 {
