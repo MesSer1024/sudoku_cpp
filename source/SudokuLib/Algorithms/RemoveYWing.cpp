@@ -20,7 +20,7 @@ namespace ddahlkvist::techniques
 		// then take all combination of those nodes and see if they can form a y-wing pattern
 		struct YWingCombination {
 			BitBoard affectedNodes;
-			u8 candidateId;
+			u8 candidateId = 0;
 		};
 
 		YWingCombination ywings[100];
@@ -38,11 +38,11 @@ namespace ddahlkvist::techniques
 		const u8 numNodes = nodesWithExactly2Candidates.countSetBits();
 		if (numNodes >= 3) {
 			u8 nodes[81];
-			assert(nodesWithExactly2Candidates.fillSetBits(nodes) == numNodes);
+			nodesWithExactly2Candidates.fillSetBits(nodes);
 
 			for (uint i = 0; i < numNodes; ++i) {
 				const u8 bit = nodes[i];
-				u8 candidates[2];
+				u8 candidates[9];
 				const u8 numCandidates = p.b.Nodes[bit].fillCandidateIds(candidates);
 				assert(numCandidates == 2);
 

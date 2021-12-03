@@ -1,0 +1,21 @@
+Function Name	Total CPU [unit, %]	Self CPU [unit, %]	Module	Category
+ + SudokuSolver.exe (PID: 17024)	224 (100,00 %)	0 (0,00 %)	Multiple modules	
+| + [External Code]	224 (100,00 %)	0 (0,00 %)	Multiple modules	IO | Networking | Kernel
+|| + __scrt_common_main_seh	224 (100,00 %)	0 (0,00 %)	SudokuSolver.exe	Networking | Kernel
+||| + main	224 (100,00 %)	0 (0,00 %)	SudokuSolver.exe	Networking | Kernel
+|||| + ddahlkvist::solveBoard	224 (100,00 %)	1 (0,45 %)	SudokuSolver.exe	Networking | Kernel
+||||| - ddahlkvist::techniques::removeNakedCandidatesInternal	58 (25,89 %)	10 (4,46 %)	SudokuSolver.exe	Kernel
+||||| - ddahlkvist::techniques::removeNaiveCandidates	37 (16,52 %)	37 (16,52 %)	SudokuSolver.exe	
+||||| - ddahlkvist::buildContext	32 (14,29 %)	21 (9,38 %)	SudokuSolver.exe	
+||||| - ddahlkvist::techniques::removeBoxLineReduction	21 (9,38 %)	21 (9,38 %)	SudokuSolver.exe	
+||||| - ddahlkvist::techniques::removeXWing	15 (6,70 %)	15 (6,70 %)	SudokuSolver.exe	
+||||| - ddahlkvist::techniques::removeSingleChain	14 (6,25 %)	3 (1,34 %)	SudokuSolver.exe	Kernel
+||||| - ddahlkvist::techniques::removeNakedSingle	7 (3,13 %)	7 (3,13 %)	SudokuSolver.exe	
+||||| - ddahlkvist::techniques::removePointingPair	7 (3,13 %)	5 (2,23 %)	SudokuSolver.exe	
+||||| - ddahlkvist::techniques::allTechniques	6 (2,68 %)	1 (0,45 %)	SudokuSolver.exe	Kernel
+||||| - ddahlkvist::techniques::removeHiddenPair	6 (2,68 %)	0 (0,00 %)	SudokuSolver.exe	Kernel
+||||| - ddahlkvist::techniques::removeHiddenTriplet	6 (2,68 %)	0 (0,00 %)	SudokuSolver.exe	Kernel
+||||| - [External Code]	4 (1,79 %)	4 (1,79 %)	Multiple modules	Networking | Kernel
+||||| - ddahlkvist::techniques::removeHiddenSingle	4 (1,79 %)	4 (1,79 %)	SudokuSolver.exe	
+||||| - ddahlkvist::techniques::removeYWing	3 (1,34 %)	2 (0,89 %)	SudokuSolver.exe	
+||||| - ddahlkvist::techniques::removeHiddenQuad	3 (1,34 %)	0 (0,00 %)	SudokuSolver.exe	Kernel

@@ -240,9 +240,9 @@ namespace ddahlkvist
 
 		struct CandidatesInDimensionBoard {
 			BitBoard board;
-			u8 numNodes;
-			u8 dimensionId;
-			u8 candidateId;
+			u8 numNodes = 0;
+			u8 dimensionId = 0;
+			u8 candidateId = 0;
 			//u8 nodes[9]; // #todo : not sure if this is neccessary 
 		};
 
