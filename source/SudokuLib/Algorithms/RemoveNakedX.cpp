@@ -37,8 +37,7 @@ namespace ddahlkvist::techniques
 			assert(depth <= MaxDepth);
 		}
 
-		using NodeAction = std::function<void(u8* nodeIndices)>;
-
+		template<typename NodeAction>
 		void whereBitCountGtDepth(NodeAction action) {
 			if (_board.notEmpty() == false)
 				return;
@@ -49,10 +48,10 @@ namespace ddahlkvist::techniques
 					continue;
 
 				// given that we can have 6 nodes and looking for pair, need to generate all combinations of pairs given {1,2,3,4,5,6} --> {1,2}, {1,3} ...
-				std::vector<u8> nodeIndexes(BoardSize);
-				const u8 numSetBits = db.fillSetBits(nodeIndexes.data());
+				u8 nodeIndexes[BoardSize];
+				const u8 numSetBits = db.fillSetBits(nodeIndexes);
 
-				auto begin = nodeIndexes.begin();
+				auto begin = nodeIndexes;
 				for_each_combination(begin, begin + _depth, begin + numSetBits, [&](auto a, auto b) -> bool {
 					action(&*a);
 					return false;
@@ -79,32 +78,10 @@ namespace ddahlkvist::techniques
 		//				check if any other node in "dimension" has any of "combined_candidates", if so technique was successful and that candidate can be removed from neighbour
 		// -----------------------------------------
 
-		using NodeQueryAction = std::function<void(u8* nodeIds, u8 count)>;
-		struct NodeQuery {
-			BitBoard boardMask;
-			const BitBoard* foreachCollection;
-			u8 foreachSize;
-			u8 whereBitCountGt;
-			NodeQueryAction action;
-		};
-
 		uint numMatches = 0;
 		BitBoard allNakedNodes = BoardBits::nodesWithCandidateCountBetweenXY(p.AllCandidates, 2, depth);
 
 		NodePermutationGenerator combo(p, allNakedNodes, depth);
-
-		NodeQuery query;
-		query.boardMask = allNakedNodes;
-		query.foreachCollection = p.AllDimensions.data();
-		query.foreachSize = 27;
-		query.whereBitCountGt = depth;
-		query.action = [&numMatches, matches, &p, depth](u8* nodeIds, u8 count) {
-			const u16 sharedCandidateMask = BoardUtils::mergeCandidateMasks(p, nodeIds, depth);
-			if (countCandidates(sharedCandidateMask) <= depth) {
-				matches[numMatches++] = NakedMatch(nodeIds, depth, sharedCandidateMask);
-			}
-		};
-		//combo.foreachCombination(p.AllDimensions, depth)
 
 		combo.whereBitCountGtDepth([&numMatches, matches, &p, depth](u8* nodeIds) {
 			const u16 sharedCandidateMask = BoardUtils::mergeCandidateMasks(p, nodeIds, depth);
